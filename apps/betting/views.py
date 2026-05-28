@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.db import transaction
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 from .models import Event, EventStatus, Selection, Bet, BetStatus, Market
 from .validators import validate_bet_placement
@@ -88,6 +90,7 @@ def place_bet(request):
         id=selection_id,
     )
     market = selection.market
+    event = market.event
 
     # Re-cotización: verificar que las odds no hayan cambiado
     selection_odds_rounded = selection.odds.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
@@ -121,6 +124,29 @@ def place_bet(request):
             request,
             f'Apuesta colocada: {stake} fichas en "{selection.name}" @ {selection.odds}. '
             f'Ganancia potencial: {(stake * selection.odds).quantize(Decimal("0.01"))} fichas.'
+        )
+        
+        # Enviar actualización en tiempo real al dashboard del admin
+        channel_layer = get_channel_layer()
+        event_name = f"{event.home_team} vs {event.away_team}"
+        print(f"WS Broadcasting new bet: {bet.id}")
+        async_to_sync(channel_layer.group_send)(
+            "dashboard_group",
+            {
+                "type": "dashboard_update",
+                "message": {
+                    "event": "new_bet",
+                    "data": {
+                        "id": str(bet.id),
+                        "user": request.user.username,
+                        "event_name": event_name,
+                        "odds": str(bet.odds_at_placement),
+                        "stake": str(bet.stake),
+                        "status_display": bet.get_status_display(),
+                        "status": bet.status,
+                    }
+                }
+            }
         )
     except Exception as e:
         messages.error(request, f'Error al colocar apuesta: {str(e)}')

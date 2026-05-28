@@ -94,6 +94,10 @@ ODDS_API_SPORT = 'soccer_conmebol_copa_libertadores'           # Fútbol (Copa L
 ODDS_API_REGIONS = 'eu'             # Europa = formato decimal
 ODDS_API_MARKETS = 'h2h,totals'    # 1X2 + Over/Under
 
+# ─── APIs Perú — KYC DNI ─────────────────────────────────────────────────────
+APISPERU_TOKEN = env('APISPERU_TOKEN', default='')
+APISPERU_DNI_URL = 'https://dniruc.apisperu.com/api/v1/dni/{dni}'
+
 # ─── Cache (idempotencia) ───────────────────────────────────────────────────
 CACHES = {
     'default': {

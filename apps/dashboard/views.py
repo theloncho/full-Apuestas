@@ -7,6 +7,8 @@ from django.http import HttpResponse
 from django.utils import timezone
 from decimal import Decimal
 import csv
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 
 from apps.wallet.models import LedgerEntry, AccountType, Direction
 from apps.betting.models import Bet, BetStatus, Event, EventStatus, Selection
@@ -63,6 +65,9 @@ def dashboard(request):
     # Últimas alertas
     recent_alerts = SuspiciousActivity.objects.filter(reviewed=False)[:10]
 
+    # Últimas apuestas
+    recent_bets = Bet.objects.select_related('user', 'selection__market__event').order_by('-placed_at')[:15]
+
     context = {
         'ggr': ggr,
         'total_stakes': total_stakes,
@@ -74,41 +79,73 @@ def dashboard(request):
         'live_events': live_events,
         'exposure_data': exposure_data,
         'recent_alerts': recent_alerts,
+        'recent_bets': recent_bets,
     }
     return render(request, 'dashboard/dashboard.html', context)
 
 
 @staff_member_required
 def export_mincetur_report(request):
-    """Exporta reporte mensual en formato CSV estilo MINCETUR."""
-    response = HttpResponse(content_type='text/csv; charset=utf-8')
-    response['Content-Disposition'] = 'attachment; filename="reporte_mincetur.csv"'
-    response.write('\ufeff')  # BOM para Excel
-
-    writer = csv.writer(response)
-    writer.writerow([
+    """Exporta reporte mensual en formato Excel (.xlsx) estilizado para MINCETUR."""
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="reporte_mincetur.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Reporte MINCETUR"
+    
+    # Estilos
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="1A365D", end_color="1A365D", fill_type="solid")
+    center_align = Alignment(horizontal="center", vertical="center")
+    border_style = Side(border_style="thin", color="DDDDDD")
+    border = Border(left=border_style, right=border_style, top=border_style, bottom=border_style)
+    
+    headers = [
         'ID Apuesta', 'Usuario', 'DNI', 'Fecha', 'Monto Apostado',
         'Cuota', 'Payout', 'Estado', 'Evento', 'Mercado',
-    ])
-
+    ]
+    
+    ws.append(headers)
+    
+    # Aplicar estilos a la cabecera
+    for col_num, cell in enumerate(ws[1], 1):
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_align
+        cell.border = border
+        
     bets = Bet.objects.select_related(
         'user', 'selection__market__event'
     ).order_by('-placed_at')
-
-    for bet in bets:
-        writer.writerow([
+    
+    for row_idx, bet in enumerate(bets, start=2):
+        row = [
             str(bet.id),
             bet.user.username,
-            bet.user.dni,
+            bet.user.dni or 'N/A',
             bet.placed_at.strftime('%Y-%m-%d %H:%M:%S'),
-            str(bet.stake),
-            str(bet.odds_at_placement),
-            str(bet.payout or '0'),
+            float(bet.stake),
+            float(bet.odds_at_placement),
+            float(bet.payout) if bet.payout else 0.0,
             bet.get_status_display(),
             str(bet.selection.market.event),
             bet.selection.market.get_market_type_display(),
-        ])
+        ]
+        ws.append(row)
+        
+        # Estilos de celdas de datos
+        for col_num, cell in enumerate(ws[row_idx], 1):
+            cell.border = border
+            if col_num in [5, 6, 7]:  # Columnas numéricas
+                cell.number_format = '#,##0.00'
+    
+    # Auto-ajustar ancho de columnas
+    column_widths = {'A': 36, 'B': 15, 'C': 12, 'D': 20, 'E': 15, 'F': 10, 'G': 15, 'H': 15, 'I': 35, 'J': 20}
+    for col, width in column_widths.items():
+        ws.column_dimensions[col].width = width
 
+    wb.save(response)
     return response
 
 

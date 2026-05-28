@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load betting_extras %}
+{% load static %}
 
 {% block title %}Deportes — FairBet Lab{% endblock %}
 
@@ -12,6 +13,40 @@
     </h1>
   </div>
 
+  <!-- Hero Carousel -->
+  <div class="fb-hero-carousel" x-data="{ slide: 0 }" x-init="setInterval(() => { slide = (slide + 1) % 2 }, 5000)">
+    <!-- Slide 1 -->
+    <div class="fb-hero-slide" :style="{ opacity: slide === 0 ? 1 : 0 }" style="background-image: url('{% static 'images/libertadores.png' %}');">
+      <div class="fb-hero-overlay">
+        <span class="fb-hero-tag">Súper Cuota</span>
+        <h2 class="text-white mb-2" style="font-weight: 800; font-size: 24px;">Noche de Libertadores</h2>
+        <p class="text-light mb-0 text-sm" style="max-width: 300px;">Multiplica tus ganancias con las mejores cuotas del mercado.</p>
+      </div>
+    </div>
+    <!-- Slide 2 -->
+    <div class="fb-hero-slide" :style="{ opacity: slide === 1 ? 1 : 0 }" style="background-image: url('{% static 'images/welcome.png' %}');">
+      <div class="fb-hero-overlay">
+        <span class="fb-hero-tag" style="background-color: var(--fb-warning);">Promoción Especial</span>
+        <h2 class="text-white mb-2" style="font-weight: 800; font-size: 24px;">Lluvia de Ganancias</h2>
+        <p class="text-light mb-0 text-sm" style="max-width: 300px;">Únete a la mesa de los ganadores y duplica tus resultados hoy.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Social Proof Ticker -->
+  <div class="fb-ticker-container">
+    <div class="fb-ticker-icon"><i class="bi bi-lightning-charge-fill" style="margin-right: 4px;"></i> Tendencias</div>
+    <div class="fb-marquee-wrap">
+      <div class="fb-marquee">
+        <span class="fb-ticker-item">🔥 Carlos_99 acaba de ganar <span class="fb-ticker-highlight">500 fichas</span></span>
+        <span class="fb-ticker-item">📈 1,245 usuarios apostando a <span class="fb-ticker-highlight">River Plate</span></span>
+        <span class="fb-ticker-item">💰 Súper cuota activa en el partido de <span class="fb-ticker-highlight">Boca Juniors</span></span>
+        <span class="fb-ticker-item">🎯 Maria_L retiró <span class="fb-ticker-highlight">1,200 fichas</span> hoy</span>
+      </div>
+    </div>
+  </div>
+
+
   <div x-data="{ currentTab: 'all' }">
     <div class="fb-tabs">
       <div class="fb-tab" :class="{ 'active': currentTab === 'all' }" @click="currentTab = 'all'">Destacados</div>
@@ -23,17 +58,20 @@
     <!-- Upcoming & Live -->
     <div>
       {% for event in upcoming %}
-      <div class="fb-event-card"
+      <div class="fb-event-card {% if forloop.first %}fb-hot-match{% endif %}"
            x-show="
              currentTab === 'all' || currentTab === 'top' || 
              (currentTab === 'live' && '{{ event.status }}' === 'en_vivo') || 
              (currentTab === 'upcoming' && '{{ event.status }}' === 'programado')
            "
            x-transition>
+      {% if forloop.first %}
+        <div class="fb-hot-badge"><i class="bi bi-fire"></i> HOT</div>
+      {% endif %}
       <div class="fb-event-header mb-2">
         <div class="fb-event-sub d-flex align-items-center gap-2">
           {% if event.status == 'en_vivo' %}
-            <span class="fb-badge-live"><span class="fb-live-dot"></span> EN VIVO</span>
+            <span class="fb-badge-live"><span class="pulse-dot"></span> EN VIVO</span>
           {% else %}
             <span>{{ event.scheduled_at|date:"d M H:i" }}</span>
           {% endif %}
@@ -48,10 +86,12 @@
         <!-- Teams & Score -->
         <div class="fb-event-teams flex-grow-1" style="min-width: 0;">
           <div class="fb-team-row">
+            <div class="fb-team-shield c2">{{ event.home_team|make_list|first }}</div>
             <span class="fb-team-name text-truncate">{{ event.home_team }}</span>
             <span class="fb-event-score">{% if event.status == 'en_vivo' %}{{ event.result_home|default:"0" }}{% endif %}</span>
           </div>
           <div class="fb-team-row mt-1">
+            <div class="fb-team-shield c1">{{ event.away_team|make_list|first }}</div>
             <span class="fb-team-name text-truncate">{{ event.away_team }}</span>
             <span class="fb-event-score">{% if event.status == 'en_vivo' %}{{ event.result_away|default:"0" }}{% endif %}</span>
           </div>

@@ -3,7 +3,7 @@
 {% block title %}Dashboard Admin — FairBet Lab{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-2">
+<div class="container-fluid py-2" x-data="dashboardWS()" x-init="connect()">
   
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -132,7 +132,7 @@
                 <th class="text-muted font-medium py-2">Estado</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="recent-bets-tbody">
               {% for bet in recent_bets %}
               <tr style="border-bottom: 1px solid var(--fb-border); background-color: {% cycle 'transparent' 'rgba(255,255,255,0.02)' %};">
                 <td class="py-2 px-3 text-white">{{ bet.user.username }}</td>
@@ -142,7 +142,7 @@
                 <td class="py-2"><span class="fb-status-badge fb-status-{{ bet.status }}">{{ bet.get_status_display }}</span></td>
               </tr>
               {% empty %}
-              <tr>
+              <tr id="empty-bets-row">
                 <td colspan="5" class="text-center text-muted py-4">Sin datos.</td>
               </tr>
               {% endfor %}
@@ -176,4 +176,68 @@
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function dashboardWS() {
+  return {
+    ws: null,
+    connect() {
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${location.host}/ws/dashboard/`;
+      console.log('Intentando conectar al dashboard WS:', wsUrl);
+      this.ws = new WebSocket(wsUrl);
+      
+      this.ws.onopen = () => console.log('✅ Conectado al WebSocket del Dashboard Admin.');
+      
+      this.ws.onmessage = (e) => {
+        console.log('📩 Mensaje recibido en WS Dashboard:', e.data);
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.event === 'new_bet') {
+            console.log('Nueva apuesta detectada, inyectando fila...');
+            this.handleNewBet(msg.data);
+          }
+        } catch (err) {
+          console.error('Error procesando mensaje WS:', err);
+        }
+      };
+      
+      this.ws.onerror = (e) => console.error('❌ WebSocket dashboard fallido.', e);
+      this.ws.onclose = () => console.warn('⚠️ WebSocket dashboard cerrado.');
+    },
+    handleNewBet(bet) {
+      const emptyRow = document.getElementById('empty-bets-row');
+      if (emptyRow) {
+        emptyRow.remove();
+      }
+      const tbody = document.getElementById('recent-bets-tbody');
+      if (!tbody) {
+        console.error('No se encontró el tbody recent-bets-tbody');
+        return;
+      }
+      
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid var(--fb-border)';
+      tr.style.backgroundColor = 'rgba(74, 222, 128, 0.2)'; // Highlight temporal más fuerte
+      tr.innerHTML = `
+        <td class="py-2 px-3 text-white">${bet.user}</td>
+        <td class="py-2 text-muted text-truncate" style="max-width: 150px;">${bet.event_name}</td>
+        <td class="py-2 text-primary font-medium">${bet.odds}</td>
+        <td class="py-2 text-white">${parseFloat(bet.stake).toFixed(2)}</td>
+        <td class="py-2"><span class="fb-status-badge fb-status-${bet.status}">${bet.status_display}</span></td>
+      `;
+      
+      tbody.prepend(tr);
+      console.log('✅ Fila inyectada correctamente.');
+      
+      setTimeout(() => {
+        tr.style.transition = 'background-color 1.5s ease';
+        tr.style.backgroundColor = 'transparent';
+      }, 1000);
+    }
+  }
+}
+</script>
 {% endblock %}

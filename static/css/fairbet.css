@@ -425,3 +425,153 @@ h3, h4, h5, h6 { font-weight: 500; margin: 0; }
   .fb-topbar { padding: 0 12px; }
   .fb-main { padding: 12px; }
 }
+
+/* ─── Gamificación & UI Enhancements ─────────────────────────── */
+
+/* 1. Pulse Animation (Urgency) */
+@keyframes pulse-live {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+.pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: var(--fb-danger);
+  border-radius: 50%;
+  animation: pulse-live 2s infinite;
+  margin-right: 4px;
+}
+
+/* 2. Hero Banners Carousel */
+.fb-hero-carousel {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  background-color: var(--fb-surface);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.fb-hero-slide {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 0.5s ease;
+}
+.fb-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.2) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 30px;
+}
+.fb-hero-tag {
+  background-color: var(--fb-primary);
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  align-self: flex-start;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+/* 3. Social Proof Marquee */
+.fb-ticker-container {
+  width: 100%;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--fb-border);
+  border-radius: 6px;
+  padding: 6px 0;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+}
+.fb-ticker-icon {
+  padding: 0 12px;
+  color: var(--fb-warning);
+  font-size: 14px;
+  border-right: 1px solid var(--fb-border);
+  z-index: 2;
+  background: var(--fb-bg);
+}
+.fb-marquee-wrap {
+  flex-grow: 1;
+  overflow: hidden;
+  position: relative;
+  white-space: nowrap;
+}
+.fb-marquee {
+  display: inline-block;
+  animation: marquee 25s linear infinite;
+  padding-left: 100%;
+}
+@keyframes marquee {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-100%, 0); }
+}
+.fb-ticker-item {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 40px;
+  font-size: 12px;
+  color: var(--fb-text-muted);
+}
+.fb-ticker-highlight {
+  color: var(--fb-primary);
+  font-weight: 500;
+  margin: 0 4px;
+}
+
+/* 4. Team Shields (Avatares) */
+.fb-team-shield {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  margin-right: 10px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+/* Assign colors to shields based on nth-child dynamically or just a preset */
+.fb-team-shield.c1 { background: linear-gradient(135deg, #ef4444, #991b1b); }
+.fb-team-shield.c2 { background: linear-gradient(135deg, #3b82f6, #1e3a8a); }
+.fb-team-shield.c3 { background: linear-gradient(135deg, #10b981, #065f46); }
+.fb-team-shield.c4 { background: linear-gradient(135deg, #f59e0b, #b45309); }
+.fb-team-shield.c5 { background: linear-gradient(135deg, #8b5cf6, #4c1d95); }
+
+/* 5. Hot Match Highlight */
+.fb-hot-match {
+  border: 1px solid var(--fb-warning) !important;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);
+  position: relative;
+}
+.fb-hot-badge {
+  position: absolute;
+  top: -10px;
+  right: 20px;
+  background-color: var(--fb-warning);
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
+}

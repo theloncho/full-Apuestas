@@ -8,21 +8,12 @@ import re
 
 def validate_dni_peruano(dni: str) -> bool:
     """
-    Algoritmo de dígito verificador del DNI peruano.
-    Los primeros 7 dígitos con factores [3,2,7,6,5,4,3,2] mod 11,
-    resultado mapea a dígito verificador esperado.
+    Valida el formato del DNI peruano: exactamente 8 dígitos numéricos.
+    La verificación real de existencia se delega a la API de RENIEC (APISPerú).
+    Nota: RENIEC no publica el algoritmo oficial de dígito verificador, por lo
+    que cualquier implementación de mod-11 es incorrecta para DNIs reales.
     """
-    if not re.match(r'^\d{8}$', dni):
-        return False
-    factors = [3, 2, 7, 6, 5, 4, 3, 2]
-    check_map = {
-        0: '6', 1: '7', 2: '8', 3: '9', 4: '0',
-        5: '1', 6: '1', 7: '2', 8: '3', 9: '4', 10: '5',
-    }
-    total = sum(int(dni[i]) * factors[i] for i in range(8))
-    remainder = total % 11
-    expected = check_map.get(remainder, '')
-    return dni[7] == expected
+    return bool(re.match(r'^\d{8}$', dni))
 
 
 class AccountStatus(models.TextChoices):

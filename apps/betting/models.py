@@ -125,7 +125,7 @@ class Bet(models.Model):
     selection = models.ForeignKey(Selection, on_delete=models.PROTECT, related_name='bets')
     stake = models.DecimalField(max_digits=18, decimal_places=4)
     odds_at_placement = models.DecimalField(max_digits=10, decimal_places=4)
-    status = FSMField(default=BetStatus.PENDING, db_index=True)
+    status = FSMField(default=BetStatus.PENDING, choices=BetStatus.choices, db_index=True)
     payout = models.DecimalField(max_digits=18, decimal_places=4, null=True, blank=True)
     cashout_amount = models.DecimalField(max_digits=18, decimal_places=4, null=True, blank=True)
     placed_at = models.DateTimeField(auto_now_add=True)

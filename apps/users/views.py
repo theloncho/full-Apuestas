@@ -1,12 +1,69 @@
+import requests as http_requests
+import json
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from django.conf import settings
 from decimal import Decimal
 
 from .forms import RegistrationForm, SelfExclusionForm, GamblingLimitForm
 from .models import AccountStatus, GamblingLimit, GamblingLimitType
+
+
+
+@require_GET
+def dni_lookup_view(request):
+    """
+    Proxy para consultar DNI contra APISPerú.
+    El token se mantiene en el servidor; el browser nunca lo ve.
+    """
+    dni = request.GET.get('dni', '').strip()
+
+    # Validación básica antes de llamar a la API externa
+    if len(dni) != 8 or not dni.isdigit():
+        return JsonResponse({'error': 'DNI inválido. Debe tener exactamente 8 dígitos.'}, status=400)
+
+    token = settings.APISPERU_TOKEN
+    if not token:
+        return JsonResponse({'error': 'Servicio de consulta DNI no configurado.'}, status=503)
+
+    url = settings.APISPERU_DNI_URL.format(dni=dni)
+    try:
+        response = http_requests.get(
+            url,
+            params={'token': token},
+            timeout=8,
+        )
+        # APISPerú siempre devuelve HTTP 200, usa success:true/false en el body
+        data = response.json()
+
+        if data.get('success') is True:
+            return JsonResponse({
+                'success': True,
+                'nombres': data.get('nombres', ''),
+                'apellido_paterno': data.get('apellidoPaterno', ''),
+                'apellido_materno': data.get('apellidoMaterno', ''),
+                'nombre_completo': (
+                    f"{data.get('nombres', '')} "
+                    f"{data.get('apellidoPaterno', '')} "
+                    f"{data.get('apellidoMaterno', '')}"
+                ).strip(),
+            })
+        else:
+            # success:false — el DNI no fue encontrado en RENIEC
+            msg = data.get('message', 'DNI no encontrado en RENIEC.')
+            return JsonResponse({'error': msg}, status=404)
+
+    except http_requests.Timeout:
+        return JsonResponse({'error': 'Tiempo de espera agotado. Intenta de nuevo.'}, status=504)
+    except http_requests.RequestException:
+        return JsonResponse({'error': 'Error de conexión con el servicio DNI.'}, status=503)
+    except Exception:
+        return JsonResponse({'error': 'Respuesta inesperada del servicio DNI.'}, status=502)
 
 
 def register_view(request):

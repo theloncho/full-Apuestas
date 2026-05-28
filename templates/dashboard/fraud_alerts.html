@@ -16,9 +16,9 @@
 
   <div class="fb-event-card p-0 overflow-hidden" style="border-top: 3px solid var(--fb-danger);">
     <div class="table-responsive">
-      <table class="table table-borderless m-0" style="font-size: 12px;">
+      <table class="table table-dark table-borderless m-0" style="font-size: 12px; --bs-table-bg: transparent;">
         <thead>
-          <tr style="border-bottom: 1px solid var(--fb-border); background-color: var(--fb-surface);">
+          <tr style="border-bottom: 1px solid var(--fb-border); background-color: rgba(255,255,255,0.05);">
             <th class="text-muted font-medium py-2 px-3">Fecha</th>
             <th class="text-muted font-medium py-2">Regla Rota</th>
             <th class="text-muted font-medium py-2">Usuario</th>
@@ -28,7 +28,7 @@
         </thead>
         <tbody>
           {% for alert in alerts %}
-          <tr style="border-bottom: 1px solid var(--fb-border); background-color: {% cycle 'var(--fb-bg)' 'var(--fb-surface)' %};">
+          <tr style="border-bottom: 1px solid var(--fb-border); background-color: {% cycle 'transparent' 'rgba(255,255,255,0.02)' %};">
             <td class="py-2 px-3 text-muted">{{ alert.created_at|date:"d/m/Y H:i" }}</td>
             <td class="py-2 text-danger font-medium">{{ alert.get_rule_broken_display }}</td>
             <td class="py-2 text-white">{{ alert.bet.user.username }}</td>

@@ -69,7 +69,7 @@
         <thead>
           <tr style="border-bottom: 1px solid var(--fb-border); background-color: rgba(255,255,255,0.05);">
             <th class="text-muted font-medium py-2 px-3">Fecha</th>
-            <th class="text-muted font-medium py-2">Tipo</th>
+            <th class="text-muted font-medium py-2">Concepto</th>
             <th class="text-muted font-medium py-2">Tx ID</th>
             <th class="text-muted font-medium py-2 text-end">Monto</th>
           </tr>
@@ -79,11 +79,7 @@
           <tr style="border-bottom: 1px solid var(--fb-border); background-color: {% cycle 'transparent' 'rgba(255,255,255,0.02)' %};">
             <td class="px-3 py-2 text-muted">{{ entry.created_at|date:"d/m/Y H:i" }}</td>
             <td class="py-2">
-              {% if entry.direction == 'CREDIT' %}
-                <span class="text-success font-medium"><i class="bi bi-plus-lg me-1"></i>Crédito</span>
-              {% else %}
-                <span class="text-danger font-medium"><i class="bi bi-dash-lg me-1"></i>Débito</span>
-              {% endif %}
+              <span class="text-white">{{ entry.description }}</span>
             </td>
             <td class="py-2 text-muted" style="font-family: monospace; font-size: 11px;">{{ entry.id|truncatechars:12 }}</td>
             <td class="py-2 text-end font-medium {% if entry.direction == 'CREDIT' %}text-success{% else %}text-danger{% endif %}">
