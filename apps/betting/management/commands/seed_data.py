@@ -117,7 +117,7 @@ class Command(BaseCommand):
             User.objects.create_superuser(
                 username='admin',
                 password='Admin1234!',
-                email='admin@fairbet.com',
+                email='admin@titanbet.com',
                 dni='87654321',
                 birth_date='1985-06-10',
             )

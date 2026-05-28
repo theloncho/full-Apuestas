@@ -1,4 +1,4 @@
-# FairBet Lab ⚽
+# TITANBET ⚽
 
 Plataforma educativa de apuestas deportivas con moneda virtual.
 
@@ -70,6 +70,11 @@ docker-compose exec web python manage.py seed_data
 - ✅ Filtrado dinámico de eventos (En Vivo / Próximos) utilizando Alpine.js sin recargar la página.
 - ✅ Alertas y notificaciones del sistema con auto-desvanecimiento (auto-dismiss).
 - ✅ Tablas de datos integradas al modo oscuro en paneles administrativos y de usuario.
+
+### Bet Builder / Same Game Parlay
+- ✅ Creación de apuestas combinadas (parlays) con validaciones avanzadas.
+- ✅ Agrupación inteligente de selecciones del mismo evento sin mezclar mercados incompatibles.
+- ✅ Recálculo en tiempo real de cuotas combinadas.
 
 ## Tests
 
