@@ -60,15 +60,15 @@
     </div>
   </div>
 
-  <!-- Social Proof Ticker -->
+  <!-- Ticker informativo -->
   <div class="fb-ticker-container">
     <div class="fb-ticker-icon"><i class="bi bi-lightning-charge-fill" style="margin-right: 4px;"></i> Tendencias</div>
     <div class="fb-marquee-wrap">
       <div class="fb-marquee">
-        <span class="fb-ticker-item">🔥 Carlos_99 acaba de ganar <span class="fb-ticker-highlight">500 fichas</span></span>
-        <span class="fb-ticker-item">📈 1,245 usuarios apostando a <span class="fb-ticker-highlight">River Plate</span></span>
-        <span class="fb-ticker-item">💰 Súper cuota activa en el partido de <span class="fb-ticker-highlight">Boca Juniors</span></span>
-        <span class="fb-ticker-item">🎯 Maria_L retiró <span class="fb-ticker-highlight">1,200 fichas</span> hoy</span>
+        <span class="fb-ticker-item">⚽ Plataforma educativa con moneda virtual</span>
+        <span class="fb-ticker-item">📊 Cuotas actualizadas en tiempo real vía API</span>
+        <span class="fb-ticker-item">🎯 Practica apuestas sin riesgo con fichas virtuales</span>
+        <span class="fb-ticker-item">🛡️ Controles de juego responsable integrados</span>
       </div>
     </div>
   </div>
@@ -86,14 +86,11 @@
     <div>
       {% for event in upcoming %}
       <div class="fb-event-card {% if forloop.first %}fb-hot-match{% endif %}"
-           :class="{ 'flash-up': evFlash }"
-           x-data="{ betCount: Math.floor(Math.random() * 50 + 5), evOddsUp: false, evFlash: false }"
            x-show="
              currentTab === 'all' || currentTab === 'top' || 
              (currentTab === 'live' && '{{ event.status }}' === 'en_vivo') || 
              (currentTab === 'upcoming' && '{{ event.status }}' === 'programado')
            "
-           x-init="setInterval(() => { evOddsUp = !evOddsUp; evFlash = true; setTimeout(() => evFlash = false, 800); }, 4000)"
            x-transition>
       {% if forloop.first %}
         <div class="fb-hot-badge"><i class="bi bi-fire"></i> HOT</div>
@@ -101,12 +98,12 @@
       <div class="fb-event-header">
         <div class="fb-event-meta">
           {% if event.status == 'en_vivo' %}
-            <span class="fb-badge-live"><span class="pulse-dot"></span> EN VIVO <span class="fb-live-minute">45'</span></span>
+            <span class="fb-badge-live"><span class="pulse-dot"></span> EN VIVO</span>
           {% else %}
             <span class="fb-event-date"><i class="bi bi-calendar3 me-1"></i>{{ event.scheduled_at|date:"d M H:i" }}</span>
           {% endif %}
           <span class="fb-event-sport"><i class="bi bi-trophy"></i> {{ event.sport.name }}</span>
-          <span class="fb-event-betters"><i class="bi bi-people-fill me-1"></i><span x-text="betCount"></span> apostando</span>
+
         </div>
         <a href="{% url 'betting:event_detail' event.id %}" class="fb-event-markets-link">
           +{{ event.markets.count }} <i class="bi bi-chevron-right"></i>
@@ -126,12 +123,7 @@
             <span class="fb-team-name">{{ event.away_team }}</span>
             <span class="fb-event-score fs-5 fw-bold">{{ event.result_away|default:"0" }}</span>
           </div>
-          {% if event.status == 'en_vivo' %}
-          <div class="fb-event-stats mt-1">
-            <span><i class="bi bi-droplet-fill me-1" style="color:#2D7CFF;font-size:9px;"></i>58%</span>
-            <span><i class="bi bi-square-fill me-1" style="color:var(--fb-warning);font-size:9px;"></i>3 Tarjetas</span>
-          </div>
-          {% endif %}
+
         </div>
         
         <!-- Odds Buttons (1X2) -->
@@ -145,12 +137,7 @@
           {% endfor %}
         </div>
       </div>
-      {% if forloop.first %}
-      <div class="fb-event-footer">
-        <span class="fb-event-badge-guarantee"><i class="bi bi-shield-check me-1"></i>Garantía de cuota</span>
-        <span class="fb-event-badge-livebet"><i class="bi bi-graph-up-arrow me-1"></i>Live betting disponible</span>
-      </div>
-      {% endif %}
+
     </div>
     {% empty %}
     <div class="fb-empty-state">

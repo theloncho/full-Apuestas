@@ -1,5 +1,6 @@
 import requests as http_requests
 import json
+from django.utils import timezone as tz
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -16,6 +17,10 @@ from .models import AccountStatus, GamblingLimit, GamblingLimitType
 
 @require_GET
 def dni_lookup_view(request):
+    """
+    Proxy para consultar DNI contra APISPerú.
+    El token se mantiene en el servidor; el browser nunca lo ve.
+    """
     dni = request.GET.get('dni', '').strip()
     if len(dni) != 8 or not dni.isdigit():
         return JsonResponse({'error': 'DNI inválido. Debe tener exactamente 8 dígitos.'}, status=400)
@@ -50,6 +55,7 @@ def dni_lookup_view(request):
 
 
 def register_view(request):
+    """Registro con KYC simulado (DNI + edad)."""
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
@@ -74,6 +80,7 @@ def register_view(request):
 
 
 def login_view(request):
+    """Inicio de sesión con registro de IP para anti-fraude."""
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -90,6 +97,7 @@ def login_view(request):
 
 
 def logout_view(request):
+    """Cierre de sesión."""
     logout(request)
     messages.info(request, 'Has cerrado sesión.')
     return redirect('users:login')
@@ -97,6 +105,7 @@ def logout_view(request):
 
 @login_required
 def profile_view(request):
+    """Perfil del usuario con controles de juego responsable."""
     from apps.wallet.models import WalletService, LedgerEntry
     user = request.user
     balance = WalletService.get_balance(user)
@@ -126,13 +135,14 @@ def profile_view(request):
         'transactions': transactions,
         'is_self_excluded': (
             user.self_excluded_permanent or
-            (user.self_excluded_until and __import__('django.utils.timezone', fromlist=['timezone']).timezone.now() < user.self_excluded_until)
+            (user.self_excluded_until and tz.now() < user.self_excluded_until)
         ),
     })
 
 
 @login_required
 def self_exclusion_view(request):
+    """Autoexclusión: temporal (7/30/90 días) o permanente."""
     if request.method == 'POST':
         form = SelfExclusionForm(request.POST)
         if form.is_valid():
@@ -150,6 +160,7 @@ def self_exclusion_view(request):
 
 @login_required
 def update_limits_view(request):
+    """Actualizar límites de depósito (diario, semanal, mensual)."""
     if request.method == 'POST':
         form = GamblingLimitForm(request.POST)
         if form.is_valid():
