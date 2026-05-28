@@ -1,0 +1,577 @@
+openapi: 3.0.3
+info:
+  title: FairBet Lab API
+  version: 1.0.0
+  description: Plataforma educativa de apuestas deportivas con moneda virtual.
+paths:
+  /api/bets/:
+    get:
+      operationId: bets_list
+      description: Get the authenticated user's recent bets.
+      tags:
+      - Betting
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Bet'
+          description: ''
+  /api/events/:
+    get:
+      operationId: events_list
+      description: List all scheduled and live events.
+      tags:
+      - Betting
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+          description: ''
+  /api/events/{event_id}/liquidate/:
+    post:
+      operationId: events_liquidate_create
+      description: 'Admin: Liquidate an event by setting the final score.'
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin Betting
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LiquidateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LiquidateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LiquidateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiquidateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/events/{event_id}/odds/:
+    get:
+      operationId: events_odds_retrieve
+      description: Get odds and markets for a specific event.
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Betting
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventOddsResponse'
+          description: ''
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/wallet/balance/:
+    get:
+      operationId: wallet_balance_retrieve
+      description: Get current wallet balance and pending locked funds.
+      tags:
+      - Wallet
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceResponse'
+          description: ''
+  /api/wallet/deposit/:
+    post:
+      operationId: wallet_deposit_create
+      description: Deposit virtual tokens into user's wallet.
+      tags:
+      - Wallet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Deposit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Deposit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Deposit'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepositResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/wallet/transactions/:
+    get:
+      operationId: wallet_transactions_list
+      description: Get the recent ledger entry transactions for the authenticated
+        user.
+      tags:
+      - Wallet
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LedgerEntry'
+          description: ''
+components:
+  schemas:
+    AccountTypeEnum:
+      enum:
+      - wallet_usuario
+      - casa
+      - apuestas_pendientes
+      - bonos
+      type: string
+      description: |-
+        * `wallet_usuario` - Wallet Usuario
+        * `casa` - Casa
+        * `apuestas_pendientes` - Apuestas Pendientes
+        * `bonos` - Bonos
+    BalanceResponse:
+      type: object
+      properties:
+        balance:
+          type: string
+        pending:
+          type: string
+      required:
+      - balance
+      - pending
+    Bet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        selection_name:
+          type: string
+          readOnly: true
+        event:
+          type: string
+          readOnly: true
+        stake:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,14}(?:\.\d{0,4})?$
+        odds_at_placement:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,4})?$
+        status:
+          $ref: '#/components/schemas/BetStatusEnum'
+        payout:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,14}(?:\.\d{0,4})?$
+          nullable: true
+        cashout_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,14}(?:\.\d{0,4})?$
+          nullable: true
+        placed_at:
+          type: string
+          format: date-time
+          readOnly: true
+        settled_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - event
+      - id
+      - odds_at_placement
+      - placed_at
+      - selection_name
+      - stake
+    BetStatusEnum:
+      enum:
+      - pending
+      - accepted
+      - settling
+      - won
+      - lost
+      - void
+      - cashed_out
+      - settled
+      type: string
+      description: |-
+        * `pending` - Pendiente
+        * `accepted` - Aceptada
+        * `settling` - Liquidando
+        * `won` - Ganada
+        * `lost` - Perdida
+        * `void` - Anulada
+        * `cashed_out` - Cash-out
+        * `settled` - Liquidada
+    Deposit:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,14}(?:\.\d{0,4})?$
+        idempotency_key:
+          type: string
+          format: uuid
+      required:
+      - amount
+    DepositResponse:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        balance:
+          type: string
+      required:
+      - balance
+      - transaction_id
+    DirectionEnum:
+      enum:
+      - DEBIT
+      - CREDIT
+      type: string
+      description: |-
+        * `DEBIT` - Débito
+        * `CREDIT` - Crédito
+    Event:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sport_name:
+          type: string
+          readOnly: true
+        home_team:
+          type: string
+          maxLength: 100
+        away_team:
+          type: string
+          maxLength: 100
+        scheduled_at:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/EventStatusEnum'
+        result_home:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        result_away:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+      required:
+      - away_team
+      - home_team
+      - id
+      - scheduled_at
+      - sport_name
+    EventOddsResponse:
+      type: object
+      properties:
+        event:
+          $ref: '#/components/schemas/Event'
+        markets:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - event
+      - markets
+    EventStatusEnum:
+      enum:
+      - programado
+      - en_vivo
+      - finalizado
+      - suspendido
+      - anulado
+      type: string
+      description: |-
+        * `programado` - Programado
+        * `en_vivo` - En vivo
+        * `finalizado` - Finalizado
+        * `suspendido` - Suspendido
+        * `anulado` - Anulado
+    LedgerEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        account_type:
+          $ref: '#/components/schemas/AccountTypeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,14}(?:\.\d{0,4})?$
+        direction:
+          $ref: '#/components/schemas/DirectionEnum'
+        transaction_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - account_type
+      - amount
+      - created_at
+      - description
+      - direction
+      - id
+      - transaction_id
+    LiquidateRequest:
+      type: object
+      properties:
+        result_home:
+          type: integer
+        result_away:
+          type: integer
+      required:
+      - result_away
+      - result_home
+    LiquidateResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        result:
+          type: string
+      required:
+      - result
+      - status
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

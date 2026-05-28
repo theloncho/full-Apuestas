@@ -121,6 +121,12 @@ class WalletService:
         # Verificar límites de depósito
         cls._check_deposit_limits(user, amount)
 
+        # Verificar si es el primer depósito para dar bono
+        has_deposits = LedgerEntry.objects.filter(
+            user=user, account_type=AccountType.USER_WALLET, 
+            direction=Direction.CREDIT, description__icontains='Recarga'
+        ).exists()
+
         # Bloqueo pesimista en entradas del usuario
         LedgerEntry.objects.select_for_update().filter(
             user=user, account_type=AccountType.USER_WALLET
@@ -146,6 +152,10 @@ class WalletService:
             transaction_id=transaction_id,
             description=description,
         )
+
+        if not has_deposits:
+            cls._award_welcome_bonus(user, amount, transaction_id)
+
         return transaction_id
 
     @classmethod
@@ -156,6 +166,9 @@ class WalletService:
         """
         if amount <= Decimal('0'):
             raise ValueError("El monto debe ser positivo.")
+
+        if UserBonus.objects.filter(user=user, status=BonusStatus.ACTIVE).exists():
+            raise ValueError("No puedes retirar fondos mientras tengas un bono activo pendiente de rollover.")
 
         # Bloqueo pesimista
         LedgerEntry.objects.select_for_update().filter(
@@ -225,6 +238,9 @@ class WalletService:
             description=f'Apuesta bloqueada #{bet.id}',
             bet=bet,
         )
+
+        cls._progress_active_bonus(user, amount)
+
         return transaction_id
 
     @classmethod
@@ -414,6 +430,9 @@ class WalletService:
             transaction_id=tid, description=f'Combinada bloqueada #{combined_bet.bet_id}',
             combined_bet=combined_bet,
         )
+
+        cls._progress_active_bonus(user, amount)
+
         return tid
 
     @classmethod
@@ -516,3 +535,60 @@ class WalletService:
                     f"Supera el límite {limit_obj.get_limit_type_display()}: "
                     f"Usado {deposited}, Límite {limit_obj.amount}"
                 )
+
+    @classmethod
+    def _award_welcome_bonus(cls, user, amount: Decimal, transaction_id: uuid.UUID):
+        """Otorga un bono del 100% en el primer depósito, hasta 500 fichas."""
+        bonus_amount = min(amount, Decimal('500.00'))
+        UserBonus.objects.create(
+            user=user, bonus_amount=bonus_amount, rollover_multiplier=5
+        )
+        LedgerEntry.objects.create(
+            account_type=AccountType.HOUSE, user=None, amount=bonus_amount,
+            direction=Direction.DEBIT, transaction_id=transaction_id,
+            description='Bono de Bienvenida'
+        )
+        LedgerEntry.objects.create(
+            account_type=AccountType.USER_WALLET, user=user, amount=bonus_amount,
+            direction=Direction.CREDIT, transaction_id=transaction_id,
+            description='Bono de Bienvenida'
+        )
+
+    @classmethod
+    def _progress_active_bonus(cls, user, amount: Decimal):
+        """Aumenta el progreso de rollover del bono si hay uno activo."""
+        active_bonus = UserBonus.objects.filter(user=user, status=BonusStatus.ACTIVE).first()
+        if active_bonus:
+            active_bonus.wagered_amount += amount
+            if active_bonus.wagered_amount >= active_bonus.rollover_target:
+                active_bonus.status = BonusStatus.COMPLETED
+            active_bonus.save()
+
+
+class BonusStatus(models.TextChoices):
+    ACTIVE = 'active', 'Activo'
+    COMPLETED = 'completed', 'Completado'
+    CANCELLED = 'cancelled', 'Cancelado'
+
+
+class UserBonus(models.Model):
+    """
+    Rastrea bonos promocionales con rollover.
+    El bono se deposita como saldo real en la billetera, pero este modelo
+    bloquea retiros hasta que se complete el rollover.
+    """
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='bonuses')
+    bonus_amount = models.DecimalField(max_digits=18, decimal_places=4)
+    rollover_multiplier = models.IntegerField(default=5)
+    wagered_amount = models.DecimalField(max_digits=18, decimal_places=4, default=Decimal('0'))
+    status = models.CharField(max_length=20, choices=BonusStatus.choices, default=BonusStatus.ACTIVE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Bono de Usuario'
+        verbose_name_plural = 'Bonos de Usuario'
+
+    @property
+    def rollover_target(self) -> Decimal:
+        """Monto total que debe apostarse para liberar el bono."""
+        return self.bonus_amount * Decimal(self.rollover_multiplier)

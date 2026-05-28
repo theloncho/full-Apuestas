@@ -7,6 +7,9 @@ from decimal import Decimal, InvalidOperation
 from .models import WalletService, LedgerEntry
 
 
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+
 class DepositSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=18, decimal_places=4, min_value=Decimal('0.0001'))
     idempotency_key = serializers.UUIDField(required=False)
@@ -18,6 +21,15 @@ class LedgerEntrySerializer(serializers.ModelSerializer):
         fields = ['id', 'account_type', 'amount', 'direction', 'transaction_id', 'description', 'created_at']
 
 
+class BalanceResponseSerializer(serializers.Serializer):
+    balance = serializers.CharField()
+    pending = serializers.CharField()
+
+@extend_schema(
+    responses=BalanceResponseSerializer,
+    description="Get current wallet balance and pending locked funds.",
+    tags=['Wallet']
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def api_balance(request):
@@ -29,6 +41,19 @@ def api_balance(request):
     })
 
 
+class DepositResponseSerializer(serializers.Serializer):
+    transaction_id = serializers.UUIDField()
+    balance = serializers.CharField()
+
+@extend_schema(
+    request=DepositSerializer,
+    responses={
+        201: DepositResponseSerializer,
+        400: OpenApiTypes.OBJECT,
+    },
+    description="Deposit virtual tokens into user's wallet.",
+    tags=['Wallet']
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def api_deposit(request):
@@ -46,6 +71,11 @@ def api_deposit(request):
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    responses=LedgerEntrySerializer(many=True),
+    description="Get the recent ledger entry transactions for the authenticated user.",
+    tags=['Wallet']
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def api_transactions(request):

@@ -65,7 +65,7 @@ def _create_alert(user, activity_type, severity, reason, metadata=None, ip_addre
 
 def check_same_ip(user, ip_address: str):
     """Detecta si la misma IP se usa por múltiples cuentas en 24 horas."""
-    if not ip_address:
+    if not ip_address or ip_address in ['127.0.0.1', '172.21.0.1', 'localhost']:
         return
         
     from django.contrib.auth import get_user_model
@@ -184,11 +184,23 @@ def check_opposite_bets_hedging(user, event_id):
             is_hedging = True
             
         if is_hedging:
-            _create_alert(
-                user=user,
-                activity_type=FraudRuleType.OPPOSITE_BETS_HEDGING,
-                severity=AlertSeverity.MEDIUM,
-                reason=f"Usuario cubrió múltiples resultados del mismo evento (Mercado {m_type}).",
-                metadata={'event_id': event_id, 'market_id': m_id, 'selections': list(sels)}
-            )
+            from apps.wallet.models import UserBonus, BonusStatus
+            has_active_bonus = UserBonus.objects.filter(user=user, status=BonusStatus.ACTIVE).exists()
+            
+            if has_active_bonus:
+                _create_alert(
+                    user=user,
+                    activity_type=FraudRuleType.BONUS_ABUSE,
+                    severity=AlertSeverity.CRITICAL,
+                    reason=f"ABUSO DE BONO: Usuario cubrió múltiples resultados del mismo evento (Mercado {m_type}) con un bono activo.",
+                    metadata={'event_id': event_id, 'market_id': m_id, 'selections': list(sels), 'bonus_abuse': True}
+                )
+            else:
+                _create_alert(
+                    user=user,
+                    activity_type=FraudRuleType.OPPOSITE_BETS_HEDGING,
+                    severity=AlertSeverity.MEDIUM,
+                    reason=f"Usuario cubrió múltiples resultados del mismo evento (Mercado {m_type}).",
+                    metadata={'event_id': event_id, 'market_id': m_id, 'selections': list(sels)}
+                )
             break  # one alert per event check is enough

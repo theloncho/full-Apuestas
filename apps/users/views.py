@@ -129,6 +129,17 @@ def profile_view(request):
     balance = WalletService.get_balance(user)
     pending = WalletService.get_pending_balance(user)
     limits = list(user.limits.all())
+    if len(limits) < 3:
+        from apps.users.models import GamblingLimit, GamblingLimitType
+        from decimal import Decimal
+        defaults = [
+            (GamblingLimitType.DAILY, Decimal('500')),
+            (GamblingLimitType.WEEKLY, Decimal('2000')),
+            (GamblingLimitType.MONTHLY, Decimal('5000'))
+        ]
+        for l_type, l_amount in defaults:
+            GamblingLimit.objects.get_or_create(user=user, limit_type=l_type, defaults={'amount': l_amount})
+        limits = list(user.limits.all())
 
     for limit in limits:
         limit.apply_pending_if_ready()
@@ -183,10 +194,13 @@ def update_limits_view(request):
         form = GamblingLimitForm(request.POST)
         if form.is_valid():
             type_map = {
-                'daily': GamblingLimitType.DAILY,
-                'weekly': GamblingLimitType.WEEKLY,
-                'monthly': GamblingLimitType.MONTHLY,
+                'diario': GamblingLimitType.DAILY,
+                'semanal': GamblingLimitType.WEEKLY,
+                'mensual': GamblingLimitType.MONTHLY,
             }
+            
+            changes_made = False
+            
             for field_name, limit_type in type_map.items():
                 new_amount = form.cleaned_data.get(field_name)
                 if new_amount is not None:
@@ -196,6 +210,20 @@ def update_limits_view(request):
                     )
                     if not _:
                         old = limit.amount
+                        # Solo procesar si realmente hubo un cambio
+                        if new_amount == old and limit.pending_amount is None:
+                            continue
+                        
+                        changes_made = True
+                        
+                        if limit.pending_amount is not None and new_amount > old:
+                            messages.error(
+                                request,
+                                f'Ya tienes un aumento pendiente para el límite {limit.get_limit_type_display()}. '
+                                f'Debes esperar 24 horas antes de solicitar otro aumento.'
+                            )
+                            continue
+
                         limit.update_limit(new_amount)
                         if new_amount > old:
                             messages.info(
@@ -209,14 +237,18 @@ def update_limits_view(request):
                                 f'Límite {limit.get_limit_type_display()} '
                                 f'actualizado a {new_amount}.'
                             )
+            
+            if not changes_made:
+                messages.info(request, "No se detectaron cambios en tus límites actuales.")
+                
             return redirect('users:profile')
     else:
         limits = {}
         for limit in request.user.limits.all():
             limits[limit.limit_type] = limit.amount
         form = GamblingLimitForm(initial={
-            'daily': limits.get(GamblingLimitType.DAILY, Decimal('500')),
-            'weekly': limits.get(GamblingLimitType.WEEKLY, Decimal('2000')),
-            'monthly': limits.get(GamblingLimitType.MONTHLY, Decimal('5000')),
+            'diario': limits.get(GamblingLimitType.DAILY, Decimal('500')),
+            'semanal': limits.get(GamblingLimitType.WEEKLY, Decimal('2000')),
+            'mensual': limits.get(GamblingLimitType.MONTHLY, Decimal('5000')),
         })
     return render(request, 'users/update_limits.html', {'form': form})

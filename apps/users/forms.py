@@ -69,19 +69,19 @@ class SelfExclusionForm(forms.Form):
 
 class GamblingLimitForm(forms.Form):
     """Formulario para configurar límites de depósito."""
-    daily = forms.DecimalField(
+    diario = forms.DecimalField(
         max_digits=18, decimal_places=4,
         min_value=0, required=False,
         label='Límite diario',
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '1'}),
     )
-    weekly = forms.DecimalField(
+    semanal = forms.DecimalField(
         max_digits=18, decimal_places=4,
         min_value=0, required=False,
         label='Límite semanal',
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '1'}),
     )
-    monthly = forms.DecimalField(
+    mensual = forms.DecimalField(
         max_digits=18, decimal_places=4,
         min_value=0, required=False,
         label='Límite mensual',

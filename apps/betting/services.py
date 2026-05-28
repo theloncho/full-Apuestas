@@ -36,7 +36,6 @@ class LiquidationService:
                 bet.mark_won()
             else:
                 bet.mark_lost()
-            bet.settle()
             bet.save()
 
         # Liquidar combinadas que incluyan selecciones de este evento
@@ -86,7 +85,6 @@ class LiquidationService:
                 cb.mark_won()
             elif any_lost:
                 cb.mark_lost()
-            cb.settle()
             cb.save()
 
     @classmethod
@@ -102,7 +100,6 @@ class LiquidationService:
         )
         for bet in bets:
             bet.void_bet()
-            bet.settle()
             bet.save()
 
     @staticmethod

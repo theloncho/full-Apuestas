@@ -96,14 +96,19 @@ fairbet/
 │   ├── wallet/      # Partida doble, LedgerEntry
 │   ├── betting/     # FSM de apuestas, liquidación
 │   ├── odds/        # WebSocket, Celery tasks
-│   ├── audit/       # Hash chain inmutable
+├── audit/       # Hash chain inmutable
 │   ├── fraud/       # Detección anti-fraude
 │   └── dashboard/   # Métricas operador
 ├── templates/       # Bootstrap 5 + Alpine.js
 ├── static/          # CSS design system
-├── docs/            # ADRs, sketches, bitácoras
+├── docs/            # ADRs, bitácoras y documentación
 └── docker-compose.yml
 ```
+
+## 📖 Documentación Adicional
+
+- [Arquitectura de Apuestas (Diagrama ER y Máquina de Estados)](docs/arquitectura_betting.md)
+- [Integridad Financiera y Cumplimiento de la Ley 31557](docs/integridad_y_cumplimiento.md)
 
 ## Licencia
 

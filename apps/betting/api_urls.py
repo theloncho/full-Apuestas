@@ -7,6 +7,8 @@ from decimal import Decimal
 
 from .models import Event, Selection, Bet, BetStatus
 from .services import LiquidationService
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -34,6 +36,11 @@ class BetSerializer(serializers.ModelSerializer):
                   'status', 'payout', 'cashout_amount', 'placed_at', 'settled_at']
 
 
+@extend_schema(
+    responses=EventSerializer(many=True),
+    description="List all scheduled and live events.",
+    tags=['Betting']
+)
 @api_view(['GET'])
 def api_events(request):
     events = Event.objects.filter(
@@ -42,6 +49,15 @@ def api_events(request):
     return Response(EventSerializer(events, many=True).data)
 
 
+class EventOddsResponseSerializer(serializers.Serializer):
+    event = EventSerializer()
+    markets = serializers.ListField(child=serializers.DictField())
+
+@extend_schema(
+    responses=EventOddsResponseSerializer,
+    description="Get odds and markets for a specific event.",
+    tags=['Betting']
+)
 @api_view(['GET'])
 def api_event_odds(request, event_id):
     try:
@@ -61,6 +77,11 @@ def api_event_odds(request, event_id):
     return Response({'event': EventSerializer(event).data, 'markets': markets})
 
 
+@extend_schema(
+    responses=BetSerializer(many=True),
+    description="Get the authenticated user's recent bets.",
+    tags=['Betting']
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def api_my_bets(request):
@@ -70,6 +91,24 @@ def api_my_bets(request):
     return Response(BetSerializer(bets, many=True).data)
 
 
+class LiquidateRequestSerializer(serializers.Serializer):
+    result_home = serializers.IntegerField()
+    result_away = serializers.IntegerField()
+
+class LiquidateResponseSerializer(serializers.Serializer):
+    status = serializers.CharField()
+    result = serializers.CharField()
+
+@extend_schema(
+    request=LiquidateRequestSerializer,
+    responses={
+        200: LiquidateResponseSerializer,
+        400: OpenApiTypes.OBJECT,
+        404: OpenApiTypes.OBJECT,
+    },
+    description="Admin: Liquidate an event by setting the final score.",
+    tags=['Admin Betting']
+)
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def api_liquidate_event(request, event_id):

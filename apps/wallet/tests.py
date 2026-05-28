@@ -7,6 +7,7 @@ Estos tests verifican las 3 invariantes críticas:
 3. payout = stake × odds con precisión Decimal exacta.
 """
 import pytest
+import uuid
 from decimal import Decimal, ROUND_HALF_UP
 from django.test import TestCase
 from django.db.models import Sum, Q
@@ -15,15 +16,29 @@ from apps.wallet.models import LedgerEntry, WalletService, AccountType, Directio
 from apps.users.models import User, AccountStatus
 
 
+def _direct_deposit(user, amount):
+    """Deposita fichas directamente sin disparar el bono de bienvenida."""
+    tid = uuid.uuid4()
+    LedgerEntry.objects.create(
+        account_type=AccountType.HOUSE, user=None, amount=amount,
+        direction=Direction.DEBIT, transaction_id=tid, description='Test deposit'
+    )
+    LedgerEntry.objects.create(
+        account_type=AccountType.USER_WALLET, user=user, amount=amount,
+        direction=Direction.CREDIT, transaction_id=tid, description='Test deposit'
+    )
+    return tid
+
+
 @pytest.mark.django_db
 class TestWalletDeposit:
     def test_deposit_creates_two_entries(self, verified_user):
-        tx_id = WalletService.deposit_tokens(verified_user, Decimal('100'))
+        tx_id = _direct_deposit(verified_user, Decimal('100'))
         entries = LedgerEntry.objects.filter(transaction_id=tx_id)
         assert entries.count() == 2
 
     def test_deposit_balance_correct(self, verified_user):
-        WalletService.deposit_tokens(verified_user, Decimal('250.5000'))
+        _direct_deposit(verified_user, Decimal('250.5000'))
         balance = WalletService.get_balance(verified_user)
         assert balance == Decimal('250.5000')
 
@@ -55,7 +70,7 @@ class TestLedgerInvariants:
     def test_global_sum_zero_after_deposits(self, verified_user):
         """Invariante: suma global de TODOS los débitos y créditos = 0."""
         for amount in [Decimal('100'), Decimal('200.5'), Decimal('50.1234')]:
-            WalletService.deposit_tokens(verified_user, amount)
+            _direct_deposit(verified_user, amount)
 
         credits = LedgerEntry.objects.aggregate(
             total=Sum('amount', filter=Q(direction=Direction.CREDIT))
@@ -81,9 +96,9 @@ class TestLedgerInvariants:
 
     def test_multiple_operations_balanced(self, verified_user):
         """Varias operaciones mantienen el ledger balanceado."""
-        WalletService.deposit_tokens(verified_user, Decimal('1000'))
+        _direct_deposit(verified_user, Decimal('1000'))
         WalletService.withdraw_tokens(verified_user, Decimal('300'))
-        WalletService.deposit_tokens(verified_user, Decimal('150'))
+        _direct_deposit(verified_user, Decimal('150'))
 
         credits = LedgerEntry.objects.aggregate(
             total=Sum('amount', filter=Q(direction=Direction.CREDIT))

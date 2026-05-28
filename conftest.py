@@ -19,9 +19,23 @@ def verified_user(db):
 
 @pytest.fixture
 def funded_user(verified_user):
-    """Crea un usuario verificado con fichas en su wallet."""
-    from apps.wallet.models import WalletService
-    WalletService.deposit_tokens(verified_user, Decimal('1000'))
+    """Crea un usuario verificado con fichas en su wallet.
+    El bono de bienvenida se cancela para aislar pruebas que no testean bonos.
+    """
+    from apps.wallet.models import WalletService, UserBonus, BonusStatus
+    from apps.wallet.models import LedgerEntry
+    # Usar direct LedgerEntry para no disparar el bono de bienvenida en tests de wallet puro
+    import uuid
+    from apps.wallet.models import AccountType, Direction
+    tid = uuid.uuid4()
+    LedgerEntry.objects.create(
+        account_type=AccountType.HOUSE, user=None, amount=Decimal('1000'),
+        direction=Direction.DEBIT, transaction_id=tid, description='Fichas de prueba'
+    )
+    LedgerEntry.objects.create(
+        account_type=AccountType.USER_WALLET, user=verified_user, amount=Decimal('1000'),
+        direction=Direction.CREDIT, transaction_id=tid, description='Fichas de prueba'
+    )
     return verified_user
 
 

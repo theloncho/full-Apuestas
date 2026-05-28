@@ -26,6 +26,18 @@ class EventAdmin(admin.ModelAdmin):
     inlines = [MarketInline]
     actions = ['mark_live', 'mark_suspended']
 
+    def save_model(self, request, obj, form, change):
+        # Si se establecen resultados y se marca como finalizado, liquidar.
+        if change and obj.status == 'finalizado' and obj.result_home is not None and obj.result_away is not None:
+            # Necesitamos el estado anterior para no liquidar dos veces
+            old_obj = Event.objects.get(pk=obj.pk)
+            if old_obj.status != 'finalizado':
+                super().save_model(request, obj, form, change)
+                LiquidationService.liquidate_event(obj, obj.result_home, obj.result_away)
+                return
+
+        super().save_model(request, obj, form, change)
+
     @admin.action(description='Marcar como en vivo')
     def mark_live(self, request, queryset):
         queryset.filter(status='programado').update(status='en_vivo')

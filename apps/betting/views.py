@@ -206,7 +206,7 @@ def bet_history(request):
     if filter_type == 'open':
         status_filter = [BetStatus.ACCEPTED, BetStatus.PENDING]
     elif filter_type == 'resolved':
-        status_filter = [BetStatus.WON, BetStatus.LOST, BetStatus.VOID, BetStatus.CASHOUT]
+        status_filter = [BetStatus.WON, BetStatus.LOST, BetStatus.VOID, BetStatus.CASHED_OUT]
 
     simple_query = Bet.objects.filter(user=request.user)
     combined_query = CombinedBet.objects.filter(user=request.user)
