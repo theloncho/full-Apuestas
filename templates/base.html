@@ -291,6 +291,7 @@
 
     <!-- BETSLIP PANEL -->
     <aside class="fb-betslip" x-data="{ tab: 'simple' }"
+           @switch-to-historial.window="tab = 'historial'"
            x-show="$store.betslip.isOpen"
            x-transition:enter-start="betslip-enter-start"
            x-transition:enter-end="betslip-enter-end"
@@ -314,7 +315,7 @@
           Combinada
           <span x-show="$store.betslip.hasCombinedSelections" x-cloak class="fb-betslip-tab-badge" x-text="$store.betslip.combinedCount"></span>
         </button>
-        <button class="fb-betslip-tab" :class="tab === 'historial' && 'active'" @click="tab = 'historial'">Historial</button>
+        <button class="fb-betslip-tab" :class="tab === 'historial' && 'active'" @click="tab = 'historial'; $store.betslip.loadHistory()">Historial</button>
       </div>
 
       <!-- Body (scrollable) -->
@@ -432,7 +433,7 @@
                 <span class="bs-coupon-title">Cupón</span>
                 <div class="bs-coupon-tabs">
                   <button class="bs-coupon-tab" :class="couponTab === 'abiertas' && 'active'" @click="couponTab = 'abiertas'">Abiertas</button>
-                  <button class="bs-coupon-tab" :class="couponTab === 'historial' && 'active'" @click="couponTab = 'historial'">Historial</button>
+                  <button class="bs-coupon-tab" :class="couponTab === 'historial' && 'active'" @click="tab = 'historial'; $store.betslip.loadHistory()">Historial</button>
                 </div>
               </div>
 
@@ -701,46 +702,60 @@
           <div class="bs-btn-footer-text">
             <i class="bi bi-shield-check"></i> Cuenta verificada
           </div>
+        </div>
+      </div>
 
       <!-- Historial Tab -->
       <template x-if="tab === 'historial'">
         <div class="fb-betslip-history">
+          <!-- Filters Removed: Only open bets are shown here -->
+          
           <template x-if="$store.betslip.historyLoading">
             <div class="fb-betslip-history-empty">
               <div class="fb-spinner" style="width:20px;height:20px;border-width:2px;"></div>
               <p style="margin-top:8px;">Cargando...</p>
             </div>
           </template>
-          <template x-if="!$store.betslip.historyLoading && $store.betslip.historyBets.length === 0">
+
+          <template x-if="!$store.betslip.historyLoading && $store.betslip.historyError">
             <div class="fb-betslip-history-empty">
-              <i class="bi bi-clock-history" style="font-size:24px;opacity:0.3;"></i>
-              <p>No hay apuestas recientes</p>
+              <i class="bi bi-exclamation-triangle" style="font-size:24px;color:var(--fb-danger);opacity:0.8;"></i>
+              <p>No se pudo cargar el historial. Intenta nuevamente.</p>
+              <button class="bs-btn-primary" style="margin-top:8px;padding:4px 12px;font-size:12px;width:auto;" @click="$store.betslip.loadHistory()">Reintentar</button>
+            </div>
+          </template>
+
+          <template x-if="!$store.betslip.historyLoading && !$store.betslip.historyError && $store.betslip.historyBets.length === 0">
+            <div class="fb-betslip-history-empty">
+              <i class="bi bi-receipt-cutoff" style="font-size:24px;opacity:0.3;"></i>
+              <p>No tienes apuestas abiertas.</p>
               <span style="font-size:10px;color:var(--fb-text-muted);">Tus apuestas aparecerán aquí</span>
             </div>
           </template>
-          <template x-if="!$store.betslip.historyLoading && $store.betslip.historyBets.length > 0">
+          
+          <template x-if="!$store.betslip.historyLoading && !$store.betslip.historyError && $store.betslip.historyBets.length > 0">
             <div class="fb-betslip-history-list">
               <template x-for="bet in $store.betslip.historyBets" :key="bet.uuid">
                 <div class="fb-history-item" :class="'fb-history-' + bet.status">
                   <div class="fb-history-header">
                     <span class="fb-history-id" x-text="bet.bet_id"></span>
-                    <span class="fb-history-type" x-text="bet.type"></span>
+                    <span class="fb-status-badge" :class="'fb-status-' + bet.status" x-text="bet.status_display"></span>
                   </div>
                   <template x-if="bet.type === 'simple'">
                     <div class="fb-history-body">
                       <div class="fb-history-event" x-text="bet.event"></div>
                       <div class="fb-history-meta">
                         <span x-text="bet.selection"></span>
-                        <span class="fb-history-odds" x-text="bet.odds"></span>
+                        <span class="fb-history-odds" x-text="'@ ' + bet.odds"></span>
                       </div>
                     </div>
                   </template>
                   <template x-if="bet.type === 'combinada'">
                     <div class="fb-history-body">
-                      <div class="fb-history-event" x-text="bet.count + ' selecciones'"></div>
+                      <div class="fb-history-event" x-text="'Combinada - ' + bet.count + ' selecciones'"></div>
                       <div class="fb-history-meta">
-                        <span>Combinada</span>
-                        <span class="fb-history-odds" x-text="bet.odds"></span>
+                        <span></span>
+                        <span class="fb-history-odds" x-text="'@ ' + bet.odds"></span>
                       </div>
                     </div>
                   </template>
@@ -750,15 +765,12 @@
                       <span x-text="bet.stake"></span>
                     </div>
                     <div class="fb-history-payout">
-                      <span class="fb-history-label">Pago:</span>
+                      <span class="fb-history-label">Pago potencial:</span>
                       <span x-text="bet.payout"></span>
                     </div>
-                    <div class="fb-history-status">
-                      <span class="fb-status-badge" :class="'fb-status-' + bet.status" x-text="bet.status_display"></span>
-                    </div>
                   </div>
-                  <div class="fb-history-extra">
-                    <span class="fb-history-date" x-text="bet.placed_at"></span>
+                  <div class="fb-history-extra" style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05);">
+                    <span class="fb-history-date" style="font-size:10px;color:var(--fb-text-muted);" x-text="bet.placed_at"></span>
                     <template x-if="bet.cashout_available">
                       <button class="fb-cashout-btn" @click="$store.betslip.openCashoutModal(bet)">
                         Cash-out <span x-text="bet.cashout_amount"></span>
@@ -847,6 +859,7 @@
         /* History */
         historyBets: [],
         historyLoading: false,
+        historyError: false,
         ws: null,
         /* Combined / Accumulator */
         combinedSelections: [],
@@ -1091,6 +1104,7 @@
                 payout: (this.combinedStake * parseFloat(this.combinedOdds)).toFixed(2),
               };
               this.showConfirmModal = true;
+              window.dispatchEvent(new CustomEvent('switch-to-historial'));
               this.loadHistory();
               this.showToastMessage('Combinada confirmada \u2713', 'success');
             } else if (data.recotizacion) {
@@ -1131,7 +1145,7 @@
         },
         confirmViewHistory() {
           this.showConfirmModal = false;
-          this.tab = 'historial';
+          window.dispatchEvent(new CustomEvent('switch-to-historial'));
           this.loadHistory();
         },
 
@@ -1174,7 +1188,8 @@
         /* ─── History Methods ─── */
         loadHistory() {
           this.historyLoading = true;
-          fetch('/bet/history/json/', {
+          this.historyError = false;
+          fetch('/api/bets/open/', {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
           })
           .then(r => r.json())
@@ -1182,6 +1197,7 @@
             this.historyBets = data.bets || [];
           })
           .catch(() => {
+            this.historyError = true;
             this.historyBets = [];
           })
           .finally(() => {
@@ -1305,6 +1321,7 @@
                 payout: this.potentialPayout,
               };
               this.showConfirmModal = true;
+              window.dispatchEvent(new CustomEvent('switch-to-historial'));
               this.loadHistory();
               this.showToastMessage('Apuesta confirmada \u2713', 'success');
             } else if (data.recotizacion) {

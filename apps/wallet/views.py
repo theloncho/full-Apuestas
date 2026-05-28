@@ -34,6 +34,14 @@ def deposit_view(request):
                 messages.error(request, 'El monto debe ser positivo.')
                 return redirect('wallet:wallet')
             WalletService.deposit_tokens(request.user, amount)
+
+            # Anti-fraude: verificar depósito seguido de cash-out
+            try:
+                from apps.fraud.detectors import check_deposit_then_cashout
+                check_deposit_then_cashout(request.user)
+            except Exception:
+                pass
+
             messages.success(request, f'Se acreditaron {amount} fichas a tu wallet.')
         except (ValueError, InvalidOperation) as e:
             messages.error(request, str(e))

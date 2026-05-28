@@ -61,6 +61,8 @@ def register_view(request):
         if form.is_valid():
             user = form.save(commit=False)
             user.account_status = AccountStatus.VERIFIED
+            ip = request.META.get('REMOTE_ADDR')
+            user.last_login_ip = ip
             user.save()
             GamblingLimit.objects.create(
                 user=user, limit_type=GamblingLimitType.DAILY, amount=Decimal('500.0000'),
@@ -72,6 +74,14 @@ def register_view(request):
                 user=user, limit_type=GamblingLimitType.MONTHLY, amount=Decimal('5000.0000'),
             )
             login(request, user)
+
+            # Anti-fraude: verificar misma IP con múltiples cuentas al registrarse
+            try:
+                from apps.fraud.detectors import check_same_ip
+                check_same_ip(user, ip)
+            except Exception:
+                pass
+
             messages.success(request, '¡Registro exitoso! Tu cuenta ha sido verificada.')
             return redirect('betting:event_list')
     else:
@@ -89,6 +99,14 @@ def login_view(request):
             user.last_login_ip = ip
             user.save(update_fields=['last_login_ip'])
             login(request, user)
+
+            # Anti-fraude: verificar misma IP con múltiples cuentas
+            try:
+                from apps.fraud.detectors import check_same_ip
+                check_same_ip(user, ip)
+            except Exception:
+                pass  # No bloquear el login por errores del detector
+
             messages.success(request, f'Bienvenido, {user.username}.')
             return redirect('betting:event_list')
     else:

@@ -141,6 +141,14 @@ def place_bet(request):
         bet.accept()
         bet.save()
 
+        # Anti-fraude: verificar patrones sospechosos tras confirmar apuesta
+        try:
+            from apps.fraud.detectors import check_identical_bet_pattern, check_opposite_bets_hedging
+            check_identical_bet_pattern(bet)
+            check_opposite_bets_hedging(request.user, event.id)
+        except Exception:
+            pass  # No bloquear la apuesta por errores del detector
+
         new_balance = WalletService.get_balance(request.user)
 
         if ajax:
@@ -332,6 +340,14 @@ def cashout_bet(request, bet_id):
         bet.cash_out(cashout_amount)
         bet.settle()
         bet.save()
+
+        # Anti-fraude: verificar depósito seguido de cash-out
+        try:
+            from apps.fraud.detectors import check_deposit_then_cashout
+            check_deposit_then_cashout(request.user)
+        except Exception:
+            pass
+
         new_balance = WalletService.get_balance(request.user)
         if ajax:
             return JsonResponse({
@@ -352,17 +368,17 @@ def cashout_bet(request, bet_id):
 
 @login_required
 def bet_history_json(request):
-    """AJAX: últimas 10 apuestas (simples + combinadas) del usuario."""
+    """AJAX: todas las apuestas (simples + combinadas) del usuario."""
     from decimal import Decimal
     bets = Bet.objects.filter(user=request.user).select_related(
         'selection__market__event',
-    ).order_by('-placed_at')[:10]
+    ).order_by('-placed_at')
 
     combined = CombinedBet.objects.filter(
         user=request.user
     ).prefetch_related(
         'selections__market__event',
-    ).order_by('-placed_at')[:10]
+    ).order_by('-placed_at')
 
     items = []
     for b in bets:
@@ -407,7 +423,76 @@ def bet_history_json(request):
         })
 
     items.sort(key=lambda x: x['placed_at'], reverse=True)
-    items = items[:10]
+    return JsonResponse({'bets': items})
+
+
+@login_required
+def open_bets_json(request):
+    """AJAX: solo apuestas abiertas (simples + combinadas) del usuario."""
+    from decimal import Decimal
+    from .models import BetStatus
+
+    open_statuses = [BetStatus.ACCEPTED, BetStatus.PENDING]
+    # In case other open statuses are added in models or custom DB statuses
+    additional_open_statuses = ["accepted", "pending", "open", "in_play"]
+
+    bets = Bet.objects.filter(
+        user=request.user,
+        status__in=additional_open_statuses
+    ).select_related(
+        'selection__market__event',
+    ).order_by('-placed_at')
+
+    combined = CombinedBet.objects.filter(
+        user=request.user,
+        status__in=additional_open_statuses
+    ).prefetch_related(
+        'selections__market__event',
+    ).order_by('-placed_at')
+
+    items = []
+    for b in bets:
+        items.append({
+            'type': 'simple',
+            'bet_id': b.bet_id,
+            'uuid': str(b.id),
+            'event': f'{b.selection.market.event.home_team} vs {b.selection.market.event.away_team}',
+            'selection': b.selection.name,
+            'market': b.selection.market.get_market_type_display(),
+            'odds': str(b.odds_at_placement),
+            'stake': str(b.stake),
+            'payout': str(b.potential_payout),
+            'status': b.status,
+            'status_display': b.get_status_display(),
+            'placed_at': b.placed_at.strftime('%d/%m/%Y %H:%M'),
+            'cashout_available': b.status == BetStatus.ACCEPTED and str(b.calculated_cashout) != '0',
+            'cashout_amount': str(b.calculated_cashout) if b.status == BetStatus.ACCEPTED else '0',
+        })
+    for cb in combined:
+        selections_list = []
+        for sel in cb.selections.all():
+            selections_list.append({
+                'name': sel.name,
+                'odds': str(sel.odds),
+                'event': f'{sel.market.event.home_team} vs {sel.market.event.away_team}',
+            })
+        items.append({
+            'type': 'combinada',
+            'bet_id': cb.bet_id,
+            'uuid': str(cb.id),
+            'selections': selections_list,
+            'count': cb.selections.count(),
+            'odds': str(cb.combined_odds),
+            'stake': str(cb.stake),
+            'payout': str(cb.potential_payout),
+            'status': cb.status,
+            'status_display': cb.get_status_display(),
+            'placed_at': cb.placed_at.strftime('%d/%m/%Y %H:%M'),
+            'cashout_available': cb.status == BetStatus.ACCEPTED and str(cb.calculated_cashout) != '0',
+            'cashout_amount': str(cb.calculated_cashout) if cb.status == BetStatus.ACCEPTED else '0',
+        })
+
+    items.sort(key=lambda x: x['placed_at'], reverse=True)
     return JsonResponse({'bets': items})
 
 

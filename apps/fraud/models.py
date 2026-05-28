@@ -6,11 +6,24 @@ class FraudRuleType(models.TextChoices):
     IDENTICAL_BET_PATTERN = 'identical_bet_pattern', 'Patrón de apuestas idénticas'
     DEPOSIT_THEN_CASHOUT = 'deposit_cashout', 'Depósito inmediato + cash-out'
     BONUS_ABUSE = 'bonus_abuse', 'Abuso de bono'
+    OPPOSITE_BETS_HEDGING = 'opposite_bets_hedging', 'Apuestas opuestas o cobertura'
 
+class AlertSeverity(models.TextChoices):
+    LOW = 'low', 'Baja'
+    MEDIUM = 'medium', 'Media'
+    HIGH = 'high', 'Alta'
+    CRITICAL = 'critical', 'Crítica'
+
+class AlertStatus(models.TextChoices):
+    PENDING = 'pending', 'Pendiente'
+    REVIEWED = 'reviewed', 'Revisada'
+    DISMISSED = 'dismissed', 'Descartada'
+    CONFIRMED = 'confirmed', 'Confirmada'
 
 class SuspiciousActivity(models.Model):
     """Alerta de actividad sospechosa para revisión manual del admin."""
-    rule_type = models.CharField(max_length=50, choices=FraudRuleType.choices)
+    activity_type = models.CharField(max_length=50, choices=FraudRuleType.choices)
+    severity = models.CharField(max_length=20, choices=AlertSeverity.choices, default=AlertSeverity.LOW)
     user = models.ForeignKey(
         'users.User',
         on_delete=models.PROTECT,
@@ -18,9 +31,11 @@ class SuspiciousActivity(models.Model):
         null=True, blank=True,
     )
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    description = models.TextField()
+    reason = models.TextField()
     metadata = models.JSONField(default=dict)
-    reviewed = models.BooleanField(default=False)
+    
+    status = models.CharField(max_length=20, choices=AlertStatus.choices, default=AlertStatus.PENDING)
+    
     reviewed_by = models.ForeignKey(
         'users.User',
         on_delete=models.SET_NULL,
@@ -36,4 +51,4 @@ class SuspiciousActivity(models.Model):
         verbose_name_plural = 'Actividades sospechosas'
 
     def __str__(self):
-        return f"[{self.get_rule_type_display()}] {self.user} - {self.created_at}"
+        return f"[{self.get_severity_display()}] [{self.get_activity_type_display()}] {self.user} - {self.status}"

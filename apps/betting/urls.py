@@ -13,6 +13,7 @@ urlpatterns = [
     path('bet/search/', views.bet_search, name='bet_search'),
     path('bet/history/json/', views.bet_history_json, name='bet_history_json'),
     path('api/bets/history/', views.bet_history_json, name='api_bet_history'),
+    path('api/bets/open/', views.open_bets_json, name='api_open_bets'),
     path('bet/combined/place/', views.place_combined_bet, name='place_combined_bet'),
     path('bet/cashout-combined/<uuid:bet_id>/', views.cashout_combined_bet, name='cashout_combined_bet'),
 ]
