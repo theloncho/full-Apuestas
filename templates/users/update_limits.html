@@ -1,13 +1,18 @@
 {% extends 'base.html' %}
 
 {% block title %}Actualizar Límites — FairBet Lab{% endblock %}
+{% block body_class %}profile-page{% endblock %}
 
 {% block content %}
+<div class="profile-page-content">
+<div class="profile-back-bar">
+  <a href="{% url 'users:profile' %}" class="profile-back-link"><i class="bi bi-arrow-left"></i> Volver a mi Perfil</a>
+</div>
+
 <div class="d-flex justify-content-center align-items-center" style="min-height: 60vh;">
   <div class="fb-event-card w-100 p-4" style="max-width: 500px; border-top: 3px solid var(--fb-warning);">
     
     <div class="mb-4">
-      <a href="{% url 'users:profile' %}" class="text-decoration-none text-muted text-sm mb-3 d-inline-block"><i class="bi bi-chevron-left"></i> Volver al Perfil</a>
       <h1 class="text-xl text-warning font-medium mb-2"><i class="bi bi-shield-lock me-1"></i> Límites de Depósito</h1>
       <p class="text-muted text-xs">Establece límites para gestionar tu dinero. Si incrementas un límite, entrará en vigor después de 24 horas.</p>
     </div>
@@ -43,6 +48,7 @@
     </form>
 
   </div>
+</div>
 </div>
 
 <script>

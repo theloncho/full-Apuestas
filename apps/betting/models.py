@@ -121,6 +121,7 @@ class Bet(models.Model):
     Cada transición dispara operaciones de wallet atómicas.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    bet_id = models.CharField(max_length=30, unique=True, blank=True, editable=False, verbose_name='ID de apuesta')
     user = models.ForeignKey('users.User', on_delete=models.PROTECT, related_name='bets')
     selection = models.ForeignKey(Selection, on_delete=models.PROTECT, related_name='bets')
     stake = models.DecimalField(max_digits=18, decimal_places=4)
@@ -132,6 +133,18 @@ class Bet(models.Model):
     settled_at = models.DateTimeField(null=True, blank=True)
     # Idempotencia
     idempotency_key = models.UUIDField(unique=True, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.bet_id:
+            year = timezone.now().year
+            last = Bet.objects.filter(bet_id__startswith=f'BET-{year}-').order_by('bet_id').last()
+            if last:
+                last_num = int(last.bet_id.rsplit('-', 1)[-1])
+                new_num = last_num + 1
+            else:
+                new_num = 1
+            self.bet_id = f'BET-{year}-{new_num:06d}'
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ['-placed_at']
@@ -250,15 +263,29 @@ class CombinedBet(models.Model):
     Si una falla, la combinada pierde.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    bet_id = models.CharField(max_length=30, unique=True, blank=True, editable=False, verbose_name='ID de apuesta')
     user = models.ForeignKey('users.User', on_delete=models.PROTECT, related_name='combined_bets')
     selections = models.ManyToManyField(Selection, related_name='combined_bets')
     stake = models.DecimalField(max_digits=18, decimal_places=4)
     combined_odds = models.DecimalField(max_digits=18, decimal_places=4)
-    status = FSMField(default=BetStatus.PENDING, db_index=True)
+    status = FSMField(default=BetStatus.PENDING, choices=BetStatus.choices, db_index=True)
     payout = models.DecimalField(max_digits=18, decimal_places=4, null=True, blank=True)
+    cashout_amount = models.DecimalField(max_digits=18, decimal_places=4, null=True, blank=True)
     placed_at = models.DateTimeField(auto_now_add=True)
     settled_at = models.DateTimeField(null=True, blank=True)
     idempotency_key = models.UUIDField(unique=True, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.bet_id:
+            year = timezone.now().year
+            last = CombinedBet.objects.filter(bet_id__startswith=f'CMB-{year}-').order_by('bet_id').last()
+            if last:
+                last_num = int(last.bet_id.rsplit('-', 1)[-1])
+                new_num = last_num + 1
+            else:
+                new_num = 1
+            self.bet_id = f'CMB-{year}-{new_num:06d}'
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ['-placed_at']
@@ -272,6 +299,98 @@ class CombinedBet(models.Model):
             odds *= sel.odds
         return odds.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
 
+    # ─── Propiedades ───────────────────────────────────────────────────────
+
+    @property
+    def potential_payout(self) -> Decimal:
+        return (self.stake * self.combined_odds).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+
+    # ─── Transiciones FSM ──────────────────────────────────────────────────
+
+    @transition(field=status, source=BetStatus.PENDING, target=BetStatus.ACCEPTED)
+    def accept(self):
+        from apps.wallet.models import WalletService
+        WalletService.lock_combined_bet(self.user, self.stake, self)
+        from apps.audit.models import AuditLog
+        AuditLog.log(
+            'combined_bet_accepted',
+            {'bet_id': self.bet_id, 'stake': str(self.stake), 'odds': str(self.combined_odds)},
+            self.user,
+        )
+
+    @transition(field=status, source=BetStatus.ACCEPTED, target=BetStatus.SETTLING)
+    def start_settling(self):
+        pass
+
+    @transition(field=status, source=BetStatus.SETTLING, target=BetStatus.WON)
+    def mark_won(self):
+        from apps.wallet.models import WalletService
+        payout = (self.stake * self.combined_odds).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+        self.payout = payout
+        self.settled_at = timezone.now()
+        WalletService.settle_won_combined(self.user, self.stake, payout, self)
+        from apps.audit.models import AuditLog
+        AuditLog.log(
+            'combined_bet_won',
+            {'bet_id': self.bet_id, 'payout': str(payout)},
+            self.user,
+        )
+
+    @transition(field=status, source=BetStatus.SETTLING, target=BetStatus.LOST)
+    def mark_lost(self):
+        from apps.wallet.models import WalletService
+        self.payout = Decimal('0')
+        self.settled_at = timezone.now()
+        WalletService.settle_lost_combined(self.user, self.stake, self)
+        from apps.audit.models import AuditLog
+        AuditLog.log('combined_bet_lost', {'bet_id': self.bet_id}, self.user)
+
+    @transition(
+        field=status,
+        source=[BetStatus.WON, BetStatus.LOST, BetStatus.VOID, BetStatus.CASHED_OUT],
+        target=BetStatus.SETTLED,
+    )
+    def settle(self):
+        pass
+
+    @transition(field=status, source=BetStatus.ACCEPTED, target=BetStatus.VOID)
+    def void_bet(self):
+        from apps.wallet.models import WalletService
+        self.settled_at = timezone.now()
+        WalletService.void_combined_bet(self.user, self.stake, self)
+        from apps.audit.models import AuditLog
+        AuditLog.log('combined_bet_voided', {'bet_id': self.bet_id}, self.user)
+
+    @property
+    def calculated_cashout(self) -> Decimal:
+        """Cash-out para combinada = stake × odds_combinada / odds_actual_producto × factor_casa."""
+        current_product = Decimal('1')
+        for sel in self.selections.all():
+            current_product *= sel.odds
+        if current_product <= Decimal('0'):
+            return Decimal('0')
+        HOUSE_FACTOR = Decimal('0.95')
+        cashout = (
+            self.stake * self.combined_odds / current_product * HOUSE_FACTOR
+        )
+        return cashout.quantize(Decimal('0.0001'))
+
+    @transition(field=status, source=BetStatus.ACCEPTED, target=BetStatus.CASHED_OUT)
+    def cash_out(self, cashout_amount: Decimal = None):
+        from apps.wallet.models import WalletService
+        if cashout_amount is None:
+            cashout_amount = self.calculated_cashout
+        cashout_amount = cashout_amount.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+        self.cashout_amount = cashout_amount
+        self.settled_at = timezone.now()
+        WalletService.cashout_combined_bet(self.user, self.stake, cashout_amount, self)
+        from apps.audit.models import AuditLog
+        AuditLog.log(
+            'combined_bet_cashed_out',
+            {'bet_id': self.bet_id, 'cashout': str(cashout_amount)},
+            self.user,
+        )
+
     def __str__(self):
         count = self.selections.count()
-        return f"Combinada {self.id} ({count} selecciones) - {self.get_status_display()}"
+        return f"Combinada {self.bet_id} ({count} selecciones) - {self.get_status_display()}"

@@ -12,6 +12,36 @@
     </h1>
   </div>
 
+  <!-- Search by Bet ID -->
+  <div class="bs-search-section mb-3" x-data="{ searchQuery: '', searchResult: null, searchError: '' }">
+    <div class="bs-search-header">
+      <i class="bi bi-search"></i>
+      <span>Buscar apuesta por ID</span>
+    </div>
+    <div class="bs-search-row">
+      <input type="text" class="bs-search-input" x-model="searchQuery" placeholder="Ej: BET-2026-000001" @keyup.enter="searchQuery ? fetch('/bet/search/?q='+searchQuery).then(r=>r.json()).then(d=>{searchResult=d;searchError=d.error||''}).catch(()=>searchError='Error de conexi\u00f3n') : null">
+      <button class="bs-search-btn" @click="searchQuery ? fetch('/bet/search/?q='+searchQuery).then(r=>r.json()).then(d=>{searchResult=d;searchError=d.error||''}).catch(()=>searchError='Error de conexi\u00f3n') : null">
+        <i class="bi bi-arrow-right"></i>
+      </button>
+    </div>
+    <!-- Search Result -->
+    <div x-show="searchResult && searchResult.found" x-cloak class="bs-search-result">
+      <div class="bs-search-result-header">
+        <span class="bs-search-result-id" x-text="searchResult.bet_id"></span>
+        <span class="fb-status-badge" :class="'fb-status-' + searchResult.status">{{ bet.get_status_display }}</span>
+      </div>
+      <div class="bs-search-result-body">
+        <span x-text="searchResult.event"></span>
+        <span class="bs-search-result-odds" x-text="'@ ' + searchResult.odds"></span>
+      </div>
+      <div class="bs-search-result-stake">
+        <span>Stake: <strong x-text="searchResult.stake + ' fichas'"></strong></span>
+        <span>Pago: <strong x-text="searchResult.payout + ' fichas'"></strong></span>
+      </div>
+    </div>
+    <div x-show="searchError" x-cloak class="bs-search-error" x-text="searchError"></div>
+  </div>
+
   <div class="fb-tabs">
     <div class="fb-tab active">Todas</div>
     <div class="fb-tab">Abiertas</div>
@@ -20,48 +50,63 @@
 
   <div class="d-flex flex-column gap-3">
     {% for bet in bets %}
-    <div class="fb-event-card border-start border-3 {% if bet.status == 'won' %}border-success{% elif bet.status == 'lost' %}border-danger{% elif bet.status == 'accepted' %}border-info{% else %}border-secondary{% endif %}">
+    <div class="bs-receipt-card {% if bet.status == 'won' %}bs-receipt-won{% elif bet.status == 'lost' %}bs-receipt-lost{% elif bet.status == 'accepted' %}bs-receipt-active{% endif %}">
       
-      <div class="d-flex justify-content-between align-items-start mb-2 border-bottom pb-2" style="border-color: var(--fb-border) !important;">
-        <div>
-          <div class="text-white font-medium mb-1">{{ bet.selection.market.event.home_team }} vs {{ bet.selection.market.event.away_team }}</div>
-          <div class="text-xs text-muted">{{ bet.selection.market.event.sport.name }} • {{ bet.selection.market.event.scheduled_at|date:"d M H:i" }}</div>
+      <!-- Receipt Header: ID + Status -->
+      <div class="bs-receipt-top">
+        <div class="bs-receipt-id">
+          <i class="bi bi-ticket-perforated"></i>
+          <span>{{ bet.bet_id }}</span>
         </div>
         <span class="fb-status-badge fb-status-{{ bet.status }}">
           {{ bet.get_status_display }}
         </span>
       </div>
 
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <div class="text-xs text-muted mb-1">{{ bet.selection.market.get_market_type_display }}{% if bet.selection.market.line %} ({{ bet.selection.market.line }}){% endif %}</div>
-          <div class="text-sm text-primary font-medium">Selección: {{ bet.selection.name }} @ {{ bet.odds_at_placement|odds_format }}</div>
-        </div>
-        
-        <div class="text-end">
-          <div class="text-xs text-muted mb-1">Monto apostado</div>
-          <div class="text-sm text-white">{{ bet.stake|floatformat:2 }} fichas</div>
-        </div>
-        
-        <div class="text-end" style="min-width: 100px;">
-          <div class="text-xs text-muted mb-1">Pago potencial</div>
-          <div class="text-base font-medium {% if bet.status == 'won' %}text-success{% else %}text-white{% endif %}">
-            {{ bet.potential_payout|floatformat:2 }}
-          </div>
+      <!-- Event + Market -->
+      <div class="bs-receipt-event">
+        <div class="bs-receipt-match">{{ bet.selection.market.event.home_team }} vs {{ bet.selection.market.event.away_team }}</div>
+        <div class="bs-receipt-meta">{{ bet.selection.market.event.sport.name }} • {{ bet.selection.market.event.scheduled_at|date:"d M H:i" }}</div>
+      </div>
+
+      <!-- Selection + Odds -->
+      <div class="bs-receipt-selection">
+        <div class="bs-receipt-market">{{ bet.selection.market.get_market_type_display }}{% if bet.selection.market.line %} ({{ bet.selection.market.line }}){% endif %}</div>
+        <div class="bs-receipt-pick">
+          <span>{{ bet.selection.name }}</span>
+          <span class="bs-receipt-odds">@ {{ bet.odds_at_placement|odds_format }}</span>
         </div>
       </div>
-      
-      <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top" style="border-color: var(--fb-border) !important;">
-        <span class="text-xs text-muted">ID: {{ bet.id|truncatechars:12 }}</span>
-        <span class="text-xs text-muted">{{ bet.placed_at|date:"d/m/Y H:i" }}</span>
+
+      <!-- Numbers Row -->
+      <div class="bs-receipt-numbers">
+        <div class="bs-receipt-num">
+          <span class="bs-receipt-num-label">Stake</span>
+          <span class="bs-receipt-num-value">{{ bet.stake|floatformat:2 }}</span>
+        </div>
+        <div class="bs-receipt-num-divider"></div>
+        <div class="bs-receipt-num">
+          <span class="bs-receipt-num-label">Pago Potencial</span>
+          <span class="bs-receipt-num-value bs-receipt-num-payout">{{ bet.potential_payout|floatformat:2 }}</span>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="bs-receipt-footer">
+        <span><i class="bi bi-clock"></i> {{ bet.placed_at|date:"d/m/Y H:i" }}</span>
+        {% if bet.status == 'accepted' and bet.calculated_cashout > 0 %}
+        <a href="{% url 'betting:cashout_bet' bet.id %}" class="bs-receipt-cashout" onclick="return confirm('¿Cash-out de {{ bet.calculated_cashout|floatformat:2 }} fichas?')">
+          <i class="bi bi-cash-coin"></i> Cash-out {{ bet.calculated_cashout|floatformat:2 }}
+        </a>
+        {% endif %}
       </div>
 
     </div>
     {% empty %}
-    <div class="p-5 text-center text-muted border border-secondary rounded" style="border-color: var(--fb-border) !important;">
-      <i class="bi bi-receipt mb-3 d-block" style="font-size: 32px; opacity: 0.3;"></i>
-      <h6 class="font-medium text-white mb-1">No tienes apuestas registradas</h6>
-      <p class="mb-0 text-sm">Visita la sección de deportes para realizar tu primera apuesta.</p>
+    <div class="bs-empty-state">
+      <i class="bi bi-receipt-cutoff"></i>
+      <h6>No tienes apuestas registradas</h6>
+      <p>Visita la sección de deportes para realizar tu primera apuesta.</p>
     </div>
     {% endfor %}
   </div>

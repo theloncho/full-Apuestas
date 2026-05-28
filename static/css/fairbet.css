@@ -3,38 +3,47 @@
    ================================================================ */
 
 :root {
-  /* Fondo Principal & Sidebar */
-  --fb-bg: #0d1117;
-  /* Fondo Cards & Panels */
-  --fb-surface: #111827;
-  /* Bordes */
-  --fb-border: #1e2733;
-  --fb-border-hover: #2d3748;
+  /* Premium Sportsbook Dark Palette */
+  --fb-bg: #0B0F17;
+  --fb-surface: #121826;
+  --fb-card: #1A2030;
+  --fb-border: #283042;
+  --fb-border-hover: #364153;
   
-  /* Acentos (Dorado) */
-  --fb-primary: #f0b429;
-  --fb-primary-hover: #f0b42918;
-  --fb-primary-border: #f0b42933;
+  /* Acentos (Dorado Premium) */
+  --fb-primary: #F5C518;
+  --fb-primary-hover: rgba(245, 197, 24, 0.1);
+  --fb-primary-border: rgba(245, 197, 24, 0.25);
   
   /* Texto */
-  --fb-text: #e2e8f0;
-  --fb-text-sec: #9ca3af;
-  --fb-text-muted: #6b7280;
+  --fb-text: #F1F5F9;
+  --fb-text-sec: #94A3B8;
+  --fb-text-muted: #64748B;
   
   /* Estados */
-  --fb-success: #4ade80;
-  --fb-danger: #f87171;
-  --fb-info: #60a5fa;
-  --fb-warning: #fbbf24;
+  --fb-success: #21C06B;
+  --fb-danger: #FF4D4D;
+  --fb-info: #2D7CFF;
+  --fb-warning: #F59E0B;
+  
+  /* Live */
+  --fb-live: #FF4D4D;
+  --fb-live-bg: rgba(255, 77, 77, 0.12);
   
   /* Responsible Gaming Bar */
   --fb-rg-bg: #1a1200;
+  --fb-rg-h: 28px;
+  --fb-header-h: calc(56px + var(--fb-rg-h));
   
   /* Fuentes */
-  --font-family-base: system-ui, -apple-system, sans-serif;
+  --font-family-base: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* ─── Global Reset & Base ──────────────────────────────────────── */
+html {
+  margin: 0;
+  padding: 0;
+}
 body {
   font-family: var(--font-family-base);
   background-color: var(--fb-bg);
@@ -44,7 +53,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  font-size: 13px; /* Default body size */
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -80,10 +89,14 @@ h3, h4, h5, h6 { font-weight: 500; margin: 0; }
 .fb-rg-bar {
   background-color: var(--fb-rg-bg);
   border-bottom: 1px solid var(--fb-primary-border);
-  padding: 6px 12px;
+  padding: 0 12px;
   font-size: 11px;
-  color: #cda34f; /* Dorado apagado */
-  text-align: center;
+  color: #cda34f;
+  height: var(--fb-rg-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   position: sticky;
   top: 56px;
   z-index: 1010;
@@ -121,84 +134,1421 @@ h3, h4, h5, h6 { font-weight: 500; margin: 0; }
   align-items: center;
   gap: 6px;
 }
+.fb-topbar-btn {
+  background: transparent;
+  border: 1px solid var(--fb-border);
+  color: var(--fb-text-sec);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: 0.2s;
+}
+.fb-topbar-btn:hover {
+  background: var(--fb-card);
+  border-color: var(--fb-border-hover);
+  color: var(--fb-text);
+}
+.fb-topbar-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--fb-primary);
+  color: #0B0F17;
+  font-size: 9px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-/* Grid Principal 3 Columnas */
+/* Grid Principal 3 Columnas — normal page scroll */
 .fb-layout {
   display: flex;
   flex: 1;
-  overflow: hidden;
+  min-width: 0;
 }
 
-/* Sidebar (Left) */
+/* Sidebar (Left) - Premium Sportsbook */
 .fb-sidebar {
-  width: 200px;
-  background-color: var(--fb-bg);
+  width: 220px;
+  min-width: 220px;
+  background: linear-gradient(180deg, #0D1322 0%, #0B0F17 100%);
   border-right: 1px solid var(--fb-border);
-  flex-shrink: 0;
+  padding: 0 0 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-self: flex-start;
+  position: sticky;
+  top: var(--fb-header-h);
+  max-height: calc(100vh - var(--fb-header-h));
   overflow-y: auto;
-  padding: 12px 0;
+}
+.fb-sidebar::-webkit-scrollbar { width: 3px; }
+.fb-sidebar::-webkit-scrollbar-track { background: transparent; }
+.fb-sidebar::-webkit-scrollbar-thumb { background: #283042; border-radius: 3px; }
+
+/* Brand */
+.fb-sidebar-brand {
+  padding: 16px 14px 12px;
+  border-bottom: 1px solid rgba(40,48,66,0.6);
+  margin-bottom: 4px;
+}
+.fb-sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.fb-sidebar-brand-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #F1F5F9;
+  letter-spacing: -0.02em;
+}
+.fb-sidebar-brand-text span {
+  color: var(--fb-primary);
+}
+
+/* Sidebar Sections */
+.fb-sidebar-section {
+  padding: 0 0 4px;
+}
+.fb-sidebar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  cursor: pointer;
+  user-select: none;
 }
 .fb-sidebar-label {
-  font-size: 10px;
+  font-size: 9px;
   text-transform: uppercase;
   color: var(--fb-text-muted);
-  padding: 0 14px;
-  margin: 16px 0 8px 0;
-  font-weight: 500;
+  padding: 0;
+  margin: 8px 0 4px 0;
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 .fb-sidebar-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 14px;
+  padding: 8px 14px;
   color: var(--fb-text-sec);
   font-size: 12px;
   border-left: 2px solid transparent;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  position: relative;
 }
 .fb-sidebar-item:hover {
-  background-color: var(--fb-border);
+  background-color: rgba(255,255,255,0.04);
   color: var(--fb-text);
 }
 .fb-sidebar-item.active {
-  background-color: var(--fb-primary-hover);
+  background: linear-gradient(90deg, rgba(245,197,24,0.08) 0%, transparent 100%);
   color: var(--fb-primary);
   border-left-color: var(--fb-primary);
 }
-
-/* Main Content (Center) */
-.fb-main {
-  flex: 1;
-  background-color: var(--fb-bg);
-  overflow-y: auto;
-  padding: 16px 24px;
+.fb-sidebar-item.active .fb-sidebar-icon {
+  color: var(--fb-primary);
+}
+.fb-sidebar-icon {
+  width: 18px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--fb-text-muted);
+  flex-shrink: 0;
+}
+.fb-sidebar-icon-live {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.fb-sidebar-count {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--fb-text-muted);
+  background: rgba(255,255,255,0.05);
+  padding: 0 6px;
+  border-radius: 8px;
+  min-width: 20px;
+  text-align: center;
 }
 
-/* Betslip (Right) */
-.fb-betslip {
-  width: 240px;
-  background-color: var(--fb-surface);
-  border-left: 1px solid var(--fb-border);
-  flex-shrink: 0;
+/* Live Activity Feed in Sidebar */
+.fb-sidebar-activity {
+  padding: 0 14px;
   display: flex;
   flex-direction: column;
+  gap: 6px;
+}
+.fb-sidebar-activity-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--fb-text-muted);
+}
+.fb-sidebar-activity-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.fb-sidebar-activity-text strong {
+  color: var(--fb-text-sec);
+  font-weight: 500;
+}
+
+/* Premium Sidebar Badge */
+.fb-sidebar-item .fb-badge-live {
+  margin-left: auto;
+  font-size: 9px;
+  padding: 1px 5px;
+}
+
+/* Main Content (Center) — normal flow, margin-right for fixed betslip */
+.fb-main {
+  flex: 1;
+  min-width: 0;
+  background-color: var(--fb-bg);
+  padding: 16px 24px 16px 24px;
+  margin-right: 320px;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* BETSLIP PANEL — Premium Sportsbook Style (Stake/Bet365/DraftKings) */
+/* ═══════════════════════════════════════════════════════════════ */
+.fb-betslip {
+  position: fixed;
+  top: var(--fb-header-h);
+  right: 0;
+  width: 320px;
+  height: calc(100vh - var(--fb-header-h));
+  background: linear-gradient(180deg, #0D1322 0%, #0B0F17 100%);
+  border-left: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: -6px 0 32px rgba(0,0,0,0.5);
+  z-index: 1000;
 }
 .fb-betslip-header {
-  padding: 12px;
-  border-bottom: 1px solid var(--fb-border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 14px 16px 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: linear-gradient(180deg, #0D1322 0%, rgba(13,19,34,0.95) 85%, transparent 100%);
+}
+.fb-betslip-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #F1F5F9;
+  letter-spacing: -0.01em;
+}
+.fb-betslip-header-title i {
+  color: var(--fb-primary);
+  font-size: 16px;
+}
+.fb-betslip-header-count {
+  background: rgba(245, 197, 24, 0.15);
+  color: var(--fb-primary);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  line-height: 1.5;
+}
+
+/* ─── Betslip: Tabs ──────────────────────────────────────────── */
+.fb-betslip-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 0;
+}
+.fb-betslip-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 8px 8px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fb-text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.fb-betslip-tab:hover {
+  color: var(--fb-text-sec);
+}
+.fb-betslip-tab.active {
+  color: var(--fb-primary);
+  border-bottom-color: var(--fb-primary);
+}
+.fb-betslip-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fb-primary);
+  color: #0B0F17;
+  font-size: 9px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* ─── Betslip: History ───────────────────────────────────────── */
+.fb-betslip-history {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--fb-text-sec);
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.fb-betslip-history-empty p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: var(--fb-text-sec);
+}
+
+/* ─── Betslip: Body ──────────────────────────────────────────── */
+.fb-betslip-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.06) transparent;
+}
+.fb-betslip-body::-webkit-scrollbar { width: 3px; }
+.fb-betslip-body::-webkit-scrollbar-track { background: transparent; }
+.fb-betslip-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+/* ═══ TICKET CARD ═══ */
+.bs-ticket {
+  background: #121826;
+  border: 1px solid #283042;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  animation: slideInTicket 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideInTicket {
+  0% { transform: translateY(-8px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Event Bar */
+.bs-event-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.bs-event-status {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fb-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bs-event-status .pulse-dot {
+  width: 6px;
+  height: 6px;
+  margin-right: 0;
+}
+.bs-remove-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.15);
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  transition: all 0.2s;
+}
+.bs-remove-btn:hover {
+  background: rgba(255,77,77,0.15);
+  color: #FF4D4D;
+}
+
+/* Match Name */
+.bs-match-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #F1F5F9;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
+/* Market Name */
+.bs-market-name {
+  font-size: 10px;
+  color: var(--fb-text-muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bs-market-name::before {
+  content: "Mercado:";
+  font-weight: 600;
+  color: var(--fb-text-sec);
+}
+
+/* Selection Card */
+.bs-selection-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.bs-selection-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.bs-selection-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fb-text-muted);
+  font-weight: 600;
+}
+.bs-selection-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #F1F5F9;
+}
+.bs-selection-type {
+  font-size: 10px;
+  color: var(--fb-text-sec);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.bs-selection-type::before {
+  content: "Tipo:";
+  font-size: 9px;
+  color: var(--fb-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bs-selection-right {
+  text-align: right;
+}
+.bs-odds-display {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--fb-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* ═══ ALERTS inside ticket ═══ */
+.bs-alert {
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  line-height: 1.4;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bs-alert-reodds {
+  background: rgba(245, 197, 24, 0.08);
+  border: 1px solid rgba(245, 197, 24, 0.2);
+  color: var(--fb-primary);
+}
+.bs-alert-suspended {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+}
+.bs-alert-error {
+  background: rgba(255, 77, 77, 0.08);
+  border: 1px solid rgba(255, 77, 77, 0.15);
+  color: #FF4D4D;
+}
+.bs-reodds-text {
+  font-size: 10px;
+  line-height: 1.4;
+}
+.bs-old-odds {
+  text-decoration: line-through;
+  opacity: 0.6;
+  color: var(--fb-primary);
+  font-weight: 600;
+}
+.bs-new-odds {
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ═══ EMPTY STATE ═══ */
+.bs-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--fb-text-muted);
+  text-align: center;
+}
+.bs-empty i {
+  font-size: 36px;
+  opacity: 0.2;
+  margin-bottom: 12px;
+}
+.bs-empty p {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fb-text-sec);
+  margin: 0 0 2px;
+}
+.bs-empty span {
+  font-size: 11px;
+  color: var(--fb-text-muted);
+}
+
+/* ═══ AMOUNT SECTION ═══ */
+.bs-amount-section {
+  margin-bottom: 10px;
+}
+.bs-amount-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.bs-amount-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #F1F5F9;
+}
+.bs-balance-display {
+  font-size: 11px;
+  color: var(--fb-text-sec);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bs-balance-display i {
+  color: var(--fb-primary);
+  font-size: 12px;
+}
+.bs-balance-display span {
+  font-weight: 700;
+  color: #21C06B;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Input */
+.bs-input-wrap {
+  margin-bottom: 6px;
+}
+.bs-stake-input {
+  width: 100%;
+  background: #0a0f1a;
+  border: 1px solid #283042;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #F1F5F9;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.bs-stake-input:focus {
+  border-color: var(--fb-primary);
+  box-shadow: 0 0 0 3px rgba(245, 197, 24, 0.08);
+}
+.bs-stake-input::placeholder {
+  color: rgba(255,255,255,0.15);
+  font-weight: 400;
+  font-size: 14px;
+}
+.bs-stake-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Quick Buttons */
+.bs-quick-btns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.bs-quick-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 7px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fb-text-sec);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.bs-quick-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.12);
+  color: #F1F5F9;
+}
+.bs-quick-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.bs-quick-btn-max {
+  background: rgba(245, 197, 24, 0.08);
+  border-color: rgba(245, 197, 24, 0.2);
+  color: var(--fb-primary);
+}
+.bs-quick-btn-max:hover:not(:disabled) {
+  background: rgba(245, 197, 24, 0.15);
+  border-color: rgba(245, 197, 24, 0.35);
+  color: var(--fb-primary);
+}
+
+/* Validation Messages */
+.bs-validations {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+.bs-val-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.bs-val-item i {
+  font-size: 11px;
+}
+.bs-val-ok {
+  color: #21C06B;
+}
+.bs-val-error {
+  color: #FF6B6B;
+  background: rgba(255,77,77,0.06);
+}
+.bs-insufficient {
+  font-size: 10.5px;
+  color: #FF4D4D;
+  text-align: center;
+  padding: 4px 0;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* ═══ CALCULATIONS ═══ */
+.bs-calc-section {
+  background: #121826;
+  border: 1px solid #283042;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.bs-calc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+.bs-calc-label {
+  font-size: 11px;
+  color: var(--fb-text-sec);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.bs-calc-label i {
+  font-size: 12px;
+  color: var(--fb-text-muted);
+}
+.bs-calc-value {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bs-calc-profit {
+  color: #21C06B;
+}
+.bs-calc-return {
+  color: #F1F5F9;
+}
+.bs-calc-balance {
+  color: var(--fb-info);
+}
+.bs-calc-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 4px 0;
+}
+
+/* ═══ CONFIRM BUTTON ═══ */
+.bs-btn-wrap {
+  margin-top: auto;
+  padding-top: 6px;
+}
+.bs-btn-confirm {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.bs-btn-primary {
+  background: linear-gradient(135deg, #F5C518, #DAA20E);
+  color: #0B0F17;
+}
+.bs-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #FFD73A, #E5B214);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(245, 197, 24, 0.3);
+}
+.bs-btn-primary:disabled,
+.bs-btn-disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.bs-btn-danger {
+  background: rgba(255,77,77,0.1);
+  border: 1px solid rgba(255,77,77,0.2);
+  color: #FF4D4D;
+  cursor: not-allowed;
+}
+.bs-btn-confirm:active:not(:disabled) {
+  transform: translateY(0);
+}
+.bs-btn-footer-text {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--fb-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.bs-btn-footer-text i {
+  font-size: 11px;
+  color: #21C06B;
+}
+
+/* ═══ COMBINADA (accumulator betslip) ═══ */
+.bs-combined-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--fb-border);
+}
+.bs-combined-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fb-text);
+}
+.bs-combined-count {
+  font-size: 10px;
+  color: var(--fb-text-muted);
+  margin-left: 6px;
+}
+.bs-combined-sel {
+  background: rgba(11,15,23,0.4);
+  border: 1px solid var(--fb-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+.bs-combined-sel-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+.bs-combined-sel-event {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fb-text);
+}
+.bs-combined-sel-remove {
+  background: none;
+  border: none;
+  color: var(--fb-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+.bs-combined-sel-remove:hover {
+  color: var(--fb-danger);
+}
+.bs-combined-sel-market {
+  font-size: 10px;
+  color: var(--fb-text-muted);
+  margin-bottom: 4px;
+}
+.bs-combined-sel-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.bs-combined-sel-name {
+  font-size: 12px;
+  color: var(--fb-text-sec);
+}
+.bs-combined-sel-odds {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fb-primary);
+}
+.bs-combined-odds-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  margin: 8px 0;
+  background: rgba(245,197,24,0.06);
+  border: 1px solid var(--fb-primary-border);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--fb-text-sec);
+}
+.bs-combined-odds-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--fb-primary);
+}
+
+/* ═══ COUPON CARD (betslip empty state) ═══ */
+.bs-coupon-search {
+  padding: 8px 10px;
+}
+.bs-coupon-search-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fb-text);
+  margin-bottom: 8px;
+}
+.bs-coupon-search-header i {
+  font-size: 13px;
+  color: var(--fb-primary);
+}
+.bs-coupon-search-row {
+  display: flex;
+  gap: 0;
+  background: rgba(11,15,23,0.5);
+  border: 1px solid var(--fb-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.bs-coupon-search-select {
+  flex: 0 0 auto;
+  background: var(--fb-card);
+  color: var(--fb-text);
+  border: none;
+  padding: 6px 8px;
+  font-size: 11px;
+  outline: none;
+  border-right: 1px solid var(--fb-border);
+  cursor: pointer;
+}
+.bs-coupon-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--fb-text);
+  outline: none;
+}
+.bs-coupon-search-input::placeholder {
+  color: var(--fb-text-muted);
+}
+.bs-coupon-search-go {
+  flex: 0 0 32px;
+  background: var(--fb-primary);
+  border: none;
+  color: #0B0F17;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bs-coupon-search-go:hover {
+  background: #e0b214;
+}
+.bs-coupon-result {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--fb-card);
+  border: 1px solid var(--fb-primary-border);
+  border-radius: 8px;
+}
+.bs-coupon-result-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.bs-coupon-result-id {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fb-primary);
+}
+.bs-coupon-result-status {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(245,197,24,0.15);
+  color: var(--fb-primary);
+}
+.bs-coupon-result-event {
+  font-size: 11px;
+  color: var(--fb-text-sec);
+  margin-bottom: 4px;
+}
+.bs-coupon-result-footer {
+  display: flex;
+  gap: 16px;
+  font-size: 10px;
+  color: var(--fb-text-muted);
+}
+.bs-coupon-result-footer strong {
+  color: var(--fb-text);
+}
+.bs-coupon-error {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--fb-danger);
+  padding: 6px 10px;
+}
+.bs-coupon-card {
+  padding: 8px 10px;
+}
+.bs-coupon-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.bs-coupon-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fb-text);
+}
+.bs-coupon-tabs {
+  display: flex;
+  background: rgba(11,15,23,0.5);
+  border-radius: 6px;
+  padding: 2px;
+}
+.bs-coupon-tab {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fb-text-muted);
+  background: transparent;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.bs-coupon-tab.active {
+  background: var(--fb-primary);
+  color: #0B0F17;
+}
+.bs-coupon-empty {
+  text-align: center;
+  padding: 20px 10px;
+}
+.bs-coupon-empty i {
+  font-size: 36px;
+  color: var(--fb-border);
+  margin-bottom: 10px;
+  display: block;
+}
+.bs-coupon-empty p {
+  font-size: 13px;
+  color: var(--fb-text-muted);
+  margin: 0;
+}
+.bs-coupon-reservation {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--fb-border);
+}
+.bs-coupon-reservation-label {
+  font-size: 11px;
+  color: var(--fb-text-muted);
+  margin-bottom: 6px;
+}
+.bs-coupon-reservation-row {
+  display: flex;
+  gap: 6px;
+}
+.bs-coupon-reservation-input {
+  flex: 1;
+  background: rgba(11,15,23,0.5);
+  border: 1px solid var(--fb-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--fb-text);
+  outline: none;
+}
+.bs-coupon-reservation-input::placeholder {
+  color: var(--fb-text-muted);
+}
+.bs-coupon-reservation-btn {
+  background: var(--fb-card);
+  border: 1px solid var(--fb-border);
+  color: var(--fb-text-sec);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ═══ RECEIPT CARD (bet_history) ═══ */
+.bs-receipt-card {
+  background: var(--fb-card);
+  border-radius: 10px;
+  padding: 14px;
+  border-left: 3px solid var(--fb-border);
+  transition: 0.2s;
+}
+.bs-receipt-card:hover {
+  border-color: var(--fb-primary);
+}
+.bs-receipt-won {
+  border-left-color: var(--fb-success);
+}
+.bs-receipt-lost {
+  border-left-color: var(--fb-danger);
+}
+.bs-receipt-active {
+  border-left-color: var(--fb-info);
+}
+.bs-receipt-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--fb-border);
+}
+.bs-receipt-id {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fb-primary);
+}
+.bs-receipt-id i {
+  font-size: 14px;
+}
+.bs-receipt-event {
+  margin-bottom: 8px;
+}
+.bs-receipt-match {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fb-text);
+  margin-bottom: 2px;
+}
+.bs-receipt-meta {
+  font-size: 11px;
+  color: var(--fb-text-muted);
+}
+.bs-receipt-selection {
+  margin-bottom: 10px;
+}
+.bs-receipt-market {
+  font-size: 11px;
+  color: var(--fb-text-muted);
+  margin-bottom: 2px;
+}
+.bs-receipt-pick {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--fb-text-sec);
+}
+.bs-receipt-odds {
+  font-weight: 700;
+  color: var(--fb-primary);
+}
+.bs-receipt-numbers {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(11,15,17,0.5);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.bs-receipt-num {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bs-receipt-num-label {
+  font-size: 10px;
+  color: var(--fb-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.bs-receipt-num-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fb-text);
+}
+.bs-receipt-num-payout {
+  color: var(--fb-primary);
+}
+.bs-receipt-num-profit {
+  color: var(--fb-success);
+}
+.bs-receipt-num-divider {
+  width: 1px;
+  background: var(--fb-border);
+  align-self: stretch;
+}
+.bs-receipt-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--fb-text-muted);
+}
+.bs-receipt-footer i {
+  font-size: 11px;
+  margin-right: 3px;
+}
+.bs-receipt-cashout {
+  color: var(--fb-success);
+  text-decoration: none;
+  font-weight: 600;
+}
+.bs-receipt-cashout:hover {
+  color: #1a9e55;
+}
+
+/* ═══ SEARCH SECTION (bet_history) ═══ */
+.bs-search-section {
+  background: var(--fb-card);
+  border: 1px solid var(--fb-border);
+  border-radius: 10px;
+  padding: 12px;
+}
+.bs-search-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fb-text);
+  margin-bottom: 8px;
+}
+.bs-search-header i {
+  color: var(--fb-primary);
+}
+.bs-search-row {
+  display: flex;
+  gap: 6px;
+}
+.bs-search-input {
+  flex: 1;
+  background: rgba(11,15,17,0.5);
+  border: 1px solid var(--fb-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--fb-text);
+  outline: none;
+}
+.bs-search-input::placeholder {
+  color: var(--fb-text-muted);
+}
+.bs-search-input:focus {
+  border-color: var(--fb-primary);
+}
+.bs-search-btn {
+  width: 36px;
+  background: var(--fb-primary);
+  border: none;
+  border-radius: 6px;
+  color: #0B0F17;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bs-search-btn:hover {
+  background: #e0b214;
+}
+.bs-search-result {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(11,15,17,0.5);
+  border: 1px solid var(--fb-primary-border);
+  border-radius: 8px;
+}
+.bs-search-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.bs-search-result-id {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fb-primary);
+}
+.bs-search-result-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--fb-text-sec);
+  margin-bottom: 4px;
+}
+.bs-search-result-odds {
+  font-weight: 700;
+  color: var(--fb-primary);
+}
+.bs-search-result-stake {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--fb-text-muted);
+}
+.bs-search-result-stake strong {
+  color: var(--fb-text);
+}
+.bs-search-error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--fb-danger);
+  padding: 6px 0;
+}
+
+/* ─── Toast Notification ──────────────────────────────────────── */
+.fb-toast-container {
+  position: fixed;
+  top: 72px;
+  right: 20px;
+  z-index: 9999;
+  pointer-events: none;
+}
+.fb-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 10px;
   font-size: 13px;
   font-weight: 500;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  backdrop-filter: blur(12px);
+  max-width: 360px;
+  line-height: 1.4;
 }
-.fb-betslip-badge {
-  background-color: var(--fb-primary);
-  color: #000;
+.fb-toast-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fb-toast-betid {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245,197,24,0.12);
+  border: 1px solid rgba(245,197,24,0.25);
   border-radius: 4px;
-  padding: 2px 6px;
+  padding: 3px 8px;
+  font-family: 'Courier New', monospace;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 700;
+  color: var(--fb-primary);
+  cursor: pointer;
+  width: fit-content;
+}
+.fb-toast-betid:hover {
+  background: rgba(245,197,24,0.2);
+}
+.fb-toast-betid i {
+  font-size: 10px;
+}
+.fb-toast-success {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #4ade80;
+}
+.fb-toast-error {
+  background: rgba(248, 113, 113, 0.15);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  color: #f87171;
+}
+.fb-toast i {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Toast transitions */
+.toast-enter { transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.toast-enter-start { transform: translateX(120%); opacity: 0; }
+.toast-enter-end { transform: translateX(0); opacity: 1; }
+.toast-leave { transition: all 0.25s ease; }
+.toast-leave-start { transform: translateX(0); opacity: 1; }
+.toast-leave-end { transform: translateX(60%); opacity: 0; }
+
+/* ─── Betslip slide-in transitions ────────────────────────────── */
+.betslip-enter { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease; }
+.betslip-enter-start { transform: translateX(100%); opacity: 0; }
+.betslip-enter-end { transform: translateX(0); opacity: 1; }
+.betslip-leave { transition: transform 0.25s ease, opacity 0.2s ease; }
+.betslip-leave-start { transform: translateX(0); opacity: 1; }
+.betslip-leave-end { transform: translateX(100%); opacity: 0; }
+
+/* x-cloak: hide until Alpine is ready */
+[x-cloak] { display: none !important; }
+
+/* ─── Odds Buttons ────────────────────────────────────────────── */
+button.fb-odds-btn {
+  background-color: #1a2535;
+  border: 1px solid #2d3748;
+  color: inherit;
+  font-family: inherit;
+  width: 100%;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  position: relative;
+}
+button.fb-odds-btn:hover {
+  background-color: #1e3a5f;
+  border-color: rgba(96, 165, 250, 0.5);
+}
+button.fb-odds-btn.selected {
+  background-color: rgba(240, 180, 41, 0.1);
+  border-color: var(--fb-primary);
+  box-shadow: 0 0 0 1px var(--fb-primary), 0 0 16px rgba(240, 180, 41, 0.15);
+}
+button.fb-odds-btn.selected .fb-odds-val {
+  color: var(--fb-primary);
+}
+button.fb-odds-btn:focus-visible {
+  border-color: var(--fb-primary);
+  box-shadow: 0 0 0 2px rgba(240, 180, 41, 0.3);
+}
+.fb-odds-btn.selected .fb-odds-label {
+  color: var(--fb-primary);
+}
+.fb-odds-wrap {
+  display: flex;
+  align-items: stretch;
+}
+.fb-odds-add {
+  width: 22px;
+  min-width: 22px;
+  background: transparent;
+  border: 1px solid var(--fb-border);
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+  color: var(--fb-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: 0.15s;
+}
+.fb-odds-add:hover {
+  background: var(--fb-card);
+  color: var(--fb-primary);
+  border-color: var(--fb-primary-border);
 }
 
 /* Footer */
@@ -236,48 +1586,220 @@ h3, h4, h5, h6 { font-weight: 500; margin: 0; }
   background-color: var(--fb-primary-hover);
 }
 
-/* ─── Componentes: Tarjeta de Evento ───────────────────────────── */
+/* ─── Componentes: Event Card Premium ──────────────────────────── */
 .fb-event-card {
-  background-color: var(--fb-surface);
+  background: linear-gradient(135deg, #1A2030 0%, #121826 100%);
   border: 1px solid var(--fb-border);
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 12px;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  transition: opacity 0.2s ease-in;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+.fb-event-card:hover {
+  border-color: #364153;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
 }
 
+/* Event Header Meta Row */
 .fb-event-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
+}
+.fb-event-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10.5px;
+  color: var(--fb-text-muted);
+}
+.fb-event-date,
+.fb-event-sport {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.fb-event-sport i {
+  color: var(--fb-primary);
+  font-size: 9px;
+}
+.fb-event-betters {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--fb-success);
+  font-size: 10px;
+}
+.fb-live-minute {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fb-live);
+  margin-left: 2px;
+}
+.fb-event-markets-link {
+  color: var(--fb-text-muted);
+  font-size: 11px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.fb-event-markets-link:hover {
+  color: var(--fb-primary);
+}
+
+/* Event Main: Teams + Odds */
+.fb-event-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 .fb-event-teams {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
 .fb-team-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 8px;
+}
+.fb-team-row .fb-event-score {
+  margin-left: auto;
 }
 .fb-team-name {
   font-size: 13px;
   color: var(--fb-text);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fb-team-name-sm {
+  font-size: 12px;
+  color: var(--fb-text-sec);
 }
 .fb-event-score {
   font-size: 14px;
   color: var(--fb-primary);
-  font-weight: 500;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
-.fb-event-sub {
-  font-size: 11px;
+
+/* Event Stats Row (possession, cards) */
+.fb-event-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 10px;
   color: var(--fb-text-muted);
+  padding-left: 30px;
+}
+.fb-event-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Event Footer Guarantee Badges */
+.fb-event-footer {
+  display: flex;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  margin-top: 2px;
+}
+.fb-event-badge-guarantee,
+.fb-event-badge-livebet {
+  font-size: 9.5px;
+  color: var(--fb-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.fb-event-badge-guarantee i { color: var(--fb-success); }
+.fb-event-badge-livebet i { color: var(--fb-info); }
+
+/* ─── Finished / Compact ─────────────────────────────────────── */
+.fb-finished-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0.6;
+}
+.fb-finished-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 6px;
+}
+.fb-finished-date {
+  font-size: 10px;
+  color: var(--fb-text-muted);
+  text-align: center;
+  line-height: 1.3;
+  min-width: 40px;
+}
+.fb-finished-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fb-finished-team {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.fb-finished-score {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fb-text-sec);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Section Title ──────────────────────────────────────────── */
+.fb-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--fb-text-muted);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ─── Empty State ────────────────────────────────────────────── */
+.fb-empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  border: 1px dashed var(--fb-border);
+  border-radius: 10px;
+}
+.fb-empty-state i {
+  font-size: 32px;
+  color: var(--fb-text-muted);
+  opacity: 0.3;
+  display: block;
+  margin-bottom: 12px;
+}
+.fb-empty-state h6 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fb-text-sec);
+  margin: 0 0 4px;
+}
+.fb-empty-state p {
+  font-size: 12px;
+  color: var(--fb-text-muted);
+  margin: 0;
 }
 
 /* ─── Componentes: Botones de Cuotas ───────────────────────────── */
@@ -417,13 +1939,619 @@ h3, h4, h5, h6 { font-weight: 500; margin: 0; }
 .scroll-hidden::-webkit-scrollbar { display: none; }
 .scroll-hidden { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ─── Responsive ───────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .fb-sidebar, .fb-betslip {
+/* ═══════════════════════════════════════════════════════════════ */
+/* PROFILE PAGE — Premium Sportsbook Style (Stake/Bet365)         */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.fb-profile-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ─── Profile Sidebar ─── */
+.fb-profile-sidebar {
+  width: 280px;
+  min-width: 280px;
+  position: sticky;
+  top: calc(var(--fb-header-h, 84px));
+}
+
+/* ─── Profile Cards ─── */
+.fb-prof-card {
+  background: var(--fb-surface);
+  border: 1px solid var(--fb-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* ─── Profile Buttons ─── */
+.fb-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--fb-text-sec);
+  text-decoration: none;
+  transition: all 0.15s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+.fb-profile-btn:hover {
+  background: rgba(255,255,255,0.04);
+  color: #F1F5F9;
+  text-decoration: none;
+}
+.fb-profile-btn i {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+.fb-profile-btn-primary {
+  background: rgba(245,197,24,0.08);
+  color: var(--fb-primary);
+  font-weight: 500;
+}
+.fb-profile-btn-primary:hover {
+  background: rgba(245,197,24,0.15);
+  color: var(--fb-primary);
+}
+
+/* ─── Profile Tabs ─── */
+.fb-prof-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--fb-border);
+  margin-bottom: 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.fb-prof-tabs::-webkit-scrollbar { height: 2px; }
+.fb-prof-tabs::-webkit-scrollbar-thumb { background: var(--fb-border); border-radius: 2px; }
+
+.fb-prof-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fb-text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  margin-bottom: -1px;
+}
+.fb-prof-tab i {
+  font-size: 15px;
+}
+.fb-prof-tab:hover {
+  color: var(--fb-text-sec);
+  border-bottom-color: rgba(255,255,255,0.1);
+}
+.fb-prof-tab.active {
+  color: var(--fb-primary);
+  border-bottom-color: var(--fb-primary);
+}
+
+/* ─── Profile Panels ─── */
+.fb-prof-panel {
+  display: none;
+}
+.fb-prof-panel.active {
+  display: block;
+}
+
+/* ─── Self-Exclusion Options ─── */
+.fb-excl-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--fb-bg);
+  border: 1px solid var(--fb-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 13px;
+  color: var(--fb-text-sec);
+}
+.fb-excl-option:has(input:checked) {
+  border-color: var(--fb-danger);
+  background: rgba(255,77,77,0.08);
+  color: var(--fb-danger);
+}
+.fb-excl-option input {
+  accent-color: var(--fb-danger);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* CONFIRMATION MODAL  (Stake/Bet365 style)                      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.fb-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+.fb-modal {
+  background: var(--fb-surface);
+  border: 1px solid var(--fb-border);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.fb-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 20px 0;
+}
+.fb-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #F1F5F9;
+  margin: 0;
+}
+.fb-modal-body {
+  padding: 14px 20px 18px;
+}
+.fb-modal-msg {
+  font-size: 13px;
+  color: var(--fb-text-sec);
+  margin: 0 0 14px;
+}
+.fb-modal-details {
+  background: var(--fb-bg);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fb-modal-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.fb-modal-detail-label {
+  color: var(--fb-text-muted);
+}
+.fb-modal-detail-value {
+  color: #F1F5F9;
+  font-weight: 500;
+}
+.fb-modal-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 20px 18px;
+}
+.fb-modal-btn {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--fb-border);
+  background: transparent;
+  color: var(--fb-text-sec);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.fb-modal-btn:hover {
+  background: rgba(255,255,255,0.05);
+  color: #F1F5F9;
+}
+.fb-modal-btn-secondary {
+  border-color: var(--fb-info);
+  color: var(--fb-info);
+}
+
+/* ─── Spinner ─── */
+.fb-spinner {
+  display: inline-block;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--fb-primary);
+  border-radius: 50%;
+  animation: fb-spin 0.6s linear infinite;
+}
+@keyframes fb-spin {
+  to { transform: rotate(360deg); }
+}
+
+.modal-enter { transition: opacity 0.2s ease; }
+.modal-enter-start { opacity: 0; }
+.modal-enter-end { opacity: 1; }
+.modal-leave { transition: opacity 0.15s ease; }
+.modal-leave-start { opacity: 1; }
+.modal-leave-end { opacity: 0; }
+
+/* ─── Status Badges ─── */
+.fb-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.fb-status-accepted {
+  background: rgba(45,124,255,0.12);
+  color: var(--fb-info);
+  border: 1px solid rgba(45,124,255,0.2);
+}
+.fb-status-won {
+  background: rgba(33,192,107,0.12);
+  color: var(--fb-success);
+  border: 1px solid rgba(33,192,107,0.2);
+}
+.fb-status-lost {
+  background: rgba(255,77,77,0.12);
+  color: var(--fb-danger);
+  border: 1px solid rgba(255,77,77,0.2);
+}
+.fb-status-void {
+  background: rgba(100,116,139,0.12);
+  color: var(--fb-text-muted);
+  border: 1px solid rgba(100,116,139,0.2);
+}
+.fb-status-cashed_out {
+  background: rgba(245,197,24,0.12);
+  color: var(--fb-primary);
+  border: 1px solid rgba(245,197,24,0.2);
+}
+
+/* ─── History Tab Items ─── */
+.fb-betslip-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 12px 0;
+}
+.fb-history-item {
+  background: var(--fb-bg);
+  border: 1px solid var(--fb-border);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fb-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.fb-history-id {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--fb-primary);
+  font-weight: 600;
+}
+.fb-history-type {
+  font-size: 10px;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  color: var(--fb-text-sec);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.fb-history-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fb-history-event {
+  font-size: 12px;
+  color: #F1F5F9;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fb-history-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--fb-text-muted);
+}
+.fb-history-odds {
+  color: var(--fb-primary);
+  font-weight: 600;
+}
+.fb-history-footer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 11px;
+}
+.fb-history-stake,
+.fb-history-payout {
+  display: flex;
+  gap: 4px;
+}
+.fb-history-label {
+  color: var(--fb-text-muted);
+}
+.fb-history-stake span:last-child,
+.fb-history-payout span:last-child {
+  color: #F1F5F9;
+  font-weight: 500;
+}
+.fb-history-status {
+  margin-left: auto;
+}
+.fb-history-extra {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.fb-history-date {
+  font-size: 10px;
+  color: var(--fb-text-muted);
+}
+
+/* ─── Cashout Button ─── */
+.fb-cashout-btn {
+  background: rgba(245,197,24,0.1);
+  border: 1px solid rgba(245,197,24,0.25);
+  color: var(--fb-primary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.fb-cashout-btn:hover {
+  background: rgba(245,197,24,0.2);
+  border-color: var(--fb-primary);
+}
+
+/* ─── History View All ─── */
+.fb-history-view-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  font-size: 11px;
+  color: var(--fb-info);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+.fb-history-view-all:hover {
+  background: rgba(45,124,255,0.08);
+  color: var(--fb-info);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* PROFILE PAGE MODE — Full-width layout without sidebar/betslip */
+/* ═══════════════════════════════════════════════════════════════ */
+
+body.profile-page .fb-sidebar,
+body.profile-page .fb-betslip {
+  display: none !important;
+}
+body.profile-page .fb-main {
+  margin-right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+body.profile-page .fb-layout {
+  max-width: 100% !important;
+}
+
+.profile-back-bar {
+  margin-bottom: 16px;
+}
+.profile-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fb-text-muted);
+  font-size: 13px;
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+.profile-back-link:hover {
+  color: var(--fb-primary);
+  background: rgba(245,197,24,0.08);
+  text-decoration: none;
+}
+.profile-back-link i {
+  font-size: 14px;
+}
+
+.profile-page-content {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* ─── Profile Responsive ─── */
+@media (max-width: 900px) {
+  .fb-profile-layout {
+    flex-direction: column !important;
+  }
+  .fb-profile-sidebar {
+    width: 100% !important;
+    min-width: 0 !important;
+    position: static !important;
+  }
+  .fb-prof-tabs {
+    gap: 0;
+  }
+  .fb-prof-tab {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .fb-prof-tab span {
     display: none;
   }
+}
+
+/* ─── Responsive ───────────────────────────────────────────────── */
+@media (min-width: 769px) {
+  .fb-betslip {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .fb-sidebar { display: none; }
   .fb-topbar { padding: 0 12px; }
-  .fb-main { padding: 12px; }
+  .fb-main { padding: 12px 12px 72px; margin-right: 0; }
+  .fb-hero-carousel { height: 160px; }
+  .fb-hero-title { font-size: 17px; }
+  .fb-hero-overlay { padding: 0 20px; }
+  .fb-hero-live-score { margin-bottom: 8px; }
+  .fb-hero-score { font-size: 28px; }
+  .fb-event-main { flex-direction: column; gap: 8px; }
+  .fb-event-teams { width: 100%; }
+  .fb-odds-grid { width: 100% !important; }
+  .fb-event-footer { display: none; }
+  .fb-ticker-item { font-size: 10px; margin-right: 24px; }
+  .fb-event-meta { flex-wrap: wrap; gap: 6px; }
+  .fb-marquee { animation-duration: 15s; }
+  .fb-footer { padding-bottom: 68px; }
+  .fb-betslip {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 85%;
+    max-width: 340px;
+    z-index: 9998;
+    height: 100%;
+  }
+}
+
+/* ─── Mobile Bottom Bar (enabled on small screens) ───────────── */
+@media (max-width: 768px) {
+  .fb-mobile-bar {
+    display: flex !important;
+  }
+}
+.fb-mobile-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: #0D1322;
+  border-top: 1px solid var(--fb-border);
+  z-index: 9999;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 8px;
+}
+.fb-mobile-bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--fb-text-muted);
+  text-decoration: none;
+  font-size: 9px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+.fb-mobile-bar-item i {
+  font-size: 18px;
+}
+.fb-mobile-bar-item.active {
+  color: var(--fb-primary);
+}
+.fb-mobile-bar-item:hover {
+  color: var(--fb-text);
+  background: rgba(255,255,255,0.05);
+}
+
+/* ─── Odds Animation Flash ───────────────────────────────────── */
+@keyframes odds-up {
+  0% { background-color: rgba(33, 192, 107, 0.2); }
+  100% { background-color: transparent; }
+}
+@keyframes odds-down {
+  0% { background-color: rgba(255, 77, 77, 0.2); }
+  100% { background-color: transparent; }
+}
+.fb-odds-btn.flash-up {
+  animation: odds-up 0.8s ease;
+}
+.fb-odds-btn.flash-down {
+  animation: odds-down 0.8s ease;
+}
+.fb-odds-btn.up .fb-odds-val {
+  color: var(--fb-success);
+}
+.fb-odds-btn.up .fb-odds-val::after {
+  content: " ▲";
+  font-size: 8px;
+}
+.fb-odds-btn.down .fb-odds-val {
+  color: var(--fb-danger);
+}
+.fb-odds-btn.down .fb-odds-val::after {
+  content: " ▼";
+  font-size: 8px;
+}
+
+/* ─── Skeleton Loading ────────────────────────────────────────── */
+@keyframes skeleton-pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+.fb-skeleton {
+  background: linear-gradient(90deg, #1A2030 25%, #283042 50%, #1A2030 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease infinite;
+  border-radius: 6px;
+}
+
+/* ─── Full-width main when no betslip ────────────────────────── */
+.fb-main-no-betslip {
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 /* ─── Gamificación & UI Enhancements ─────────────────────────── */
@@ -444,44 +2572,133 @@ h3, h4, h5, h6 { font-weight: 500; margin: 0; }
   margin-right: 4px;
 }
 
-/* 2. Hero Banners Carousel */
+/* 2. Hero Banners Carousel Premium */
 .fb-hero-carousel {
   position: relative;
   width: 100%;
-  height: 180px;
+  height: 200px;
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 24px;
-  background-color: var(--fb-surface);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  background: linear-gradient(135deg, #1a2030 0%, #0B0F17 100%);
+  box-shadow: 0 4px 30px rgba(0,0,0,0.6);
 }
 .fb-hero-slide {
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
   background-size: cover;
   background-position: center;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.6s ease;
 }
 .fb-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.2) 100%);
+  background: linear-gradient(to right, rgba(11,15,23,0.92) 0%, rgba(11,15,23,0.15) 100%);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 30px;
+  padding: 0 32px;
 }
 .fb-hero-tag {
   background-color: var(--fb-primary);
-  color: #0f172a;
-  font-size: 10px;
-  font-weight: 700;
+  color: #0B0F17;
+  font-size: 9px;
+  font-weight: 800;
   text-transform: uppercase;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 4px;
   align-self: flex-start;
-  margin-bottom: 8px;
-  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.fb-hero-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.fb-hero-desc {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  margin: 0 0 12px;
+  max-width: 320px;
+  line-height: 1.4;
+}
+.fb-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--fb-primary);
+  color: #0B0F17;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  align-self: flex-start;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.fb-hero-cta:hover {
+  background: #ffd73a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(245,197,24,0.3);
+  color: #0B0F17;
+}
+
+/* Hero Live Score */
+.fb-hero-live-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.fb-hero-score {
+  font-size: 36px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.fb-hero-score-divider {
+  font-size: 30px;
+  font-weight: 200;
+  color: rgba(255,255,255,0.3);
+}
+
+/* Hero Dots Navigation */
+.fb-hero-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+.fb-hero-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+.fb-hero-dot.active {
+  background: var(--fb-primary);
+  width: 18px;
+  border-radius: 3px;
+}
+.fb-hero-dot:hover {
+  background: rgba(255,255,255,0.5);
 }
 
 /* 3. Social Proof Marquee */

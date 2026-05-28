@@ -38,12 +38,55 @@ class LiquidationService:
             bet.settle()
             bet.save()
 
+        # Liquidar combinadas que incluyan selecciones de este evento
+        cls._settle_combined_bets_for_event(event)
+
         from apps.audit.models import AuditLog
         AuditLog.log('event_liquidated', {
             'event_id': event.id,
             'result': f'{result_home}-{result_away}',
             'bets_settled': bets.count(),
         })
+
+    @classmethod
+    def _settle_combined_bets_for_event(cls, event: Event):
+        """Resuelve combinadas que contienen selecciones del evento liquidado."""
+        affected_ids = CombinedBet.objects.filter(
+            selections__market__event=event,
+            status=BetStatus.ACCEPTED,
+        ).values_list('id', flat=True).distinct()
+
+        for cb_id in affected_ids:
+            cb = CombinedBet.objects.select_for_update().get(id=cb_id)
+            cb.start_settling()
+            cb.save()
+
+            # Verificar todas las selecciones de la combinada
+            all_won = all(
+                sel.is_winner is True
+                for sel in cb.selections.all()
+            )
+            any_lost = any(
+                sel.is_winner is False
+                for sel in cb.selections.all()
+            )
+            any_pending = any(
+                sel.is_winner is None
+                for sel in cb.selections.all()
+            )
+
+            if any_pending:
+                # No todas las selecciones están resueltas aún — volver a ACCEPTED
+                cb.status = BetStatus.ACCEPTED
+                cb.save()
+                continue
+
+            if all_won:
+                cb.mark_won()
+            elif any_lost:
+                cb.mark_lost()
+            cb.settle()
+            cb.save()
 
     @classmethod
     @transaction.atomic

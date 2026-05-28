@@ -44,9 +44,16 @@ class LedgerEntry(models.Model):
     transaction_id = models.UUIDField(db_index=True)
     description = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-    # Referencia opcional a apuesta
+    # Referencia opcional a apuesta simple
     bet = models.ForeignKey(
         'betting.Bet',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='ledger_entries',
+    )
+    # Referencia opcional a apuesta combinada
+    combined_bet = models.ForeignKey(
+        'betting.CombinedBet',
         on_delete=models.PROTECT,
         null=True, blank=True,
         related_name='ledger_entries',
@@ -344,6 +351,139 @@ class WalletService:
             bet=bet,
         )
         return transaction_id
+
+    @classmethod
+    @transaction.atomic
+    def cashout_combined_bet(cls, user, stake: Decimal, cashout_amount: Decimal, combined_bet) -> uuid.UUID:
+        """Cash-out para combinada: devolver cashout al usuario."""
+        transaction_id = uuid.uuid4()
+        LedgerEntry.objects.create(
+            account_type=AccountType.PENDING_BETS, user=user,
+            amount=stake, direction=Direction.DEBIT,
+            transaction_id=transaction_id,
+            description=f'Cash-out combinada #{combined_bet.bet_id}',
+            combined_bet=combined_bet,
+        )
+        LedgerEntry.objects.create(
+            account_type=AccountType.HOUSE, user=None,
+            amount=stake, direction=Direction.CREDIT,
+            transaction_id=transaction_id,
+            description=f'Cash-out combinada #{combined_bet.bet_id} - stake',
+            combined_bet=combined_bet,
+        )
+        LedgerEntry.objects.create(
+            account_type=AccountType.HOUSE, user=None,
+            amount=cashout_amount, direction=Direction.DEBIT,
+            transaction_id=transaction_id,
+            description=f'Cash-out combinada #{combined_bet.bet_id} - pago',
+            combined_bet=combined_bet,
+        )
+        LedgerEntry.objects.create(
+            account_type=AccountType.USER_WALLET, user=user,
+            amount=cashout_amount, direction=Direction.CREDIT,
+            transaction_id=transaction_id,
+            description=f'Cash-out combinada #{combined_bet.bet_id}',
+            combined_bet=combined_bet,
+        )
+        return transaction_id
+
+    # ─── Métodos para Apuestas Combinadas ─────────────────────────────────
+
+    @classmethod
+    @transaction.atomic
+    def lock_combined_bet(cls, user, amount: Decimal, combined_bet) -> uuid.UUID:
+        """Bloquea fondos para una combinada."""
+        LedgerEntry.objects.select_for_update().filter(
+            user=user, account_type=AccountType.USER_WALLET
+        ).exists()
+        balance = cls.get_balance(user)
+        if balance < amount:
+            raise ValueError(
+                f"Saldo insuficiente. Disponible: {balance}, Requerido: {amount}"
+            )
+        tid = uuid.uuid4()
+        LedgerEntry.objects.create(
+            account_type=AccountType.USER_WALLET, user=user,
+            amount=amount, direction=Direction.DEBIT,
+            transaction_id=tid, description=f'Combinada bloqueada #{combined_bet.bet_id}',
+            combined_bet=combined_bet,
+        )
+        LedgerEntry.objects.create(
+            account_type=AccountType.PENDING_BETS, user=user,
+            amount=amount, direction=Direction.CREDIT,
+            transaction_id=tid, description=f'Combinada bloqueada #{combined_bet.bet_id}',
+            combined_bet=combined_bet,
+        )
+        return tid
+
+    @classmethod
+    @transaction.atomic
+    def settle_won_combined(cls, user, stake: Decimal, payout: Decimal, combined_bet) -> uuid.UUID:
+        """Combinada ganada."""
+        tid = uuid.uuid4()
+        LedgerEntry.objects.create(
+            account_type=AccountType.PENDING_BETS, user=user,
+            amount=stake, direction=Direction.DEBIT,
+            transaction_id=tid, description=f'Combinada ganada #{combined_bet.bet_id}',
+            combined_bet=combined_bet,
+        )
+        LedgerEntry.objects.create(
+            account_type=AccountType.HOUSE, user=None,
+            amount=stake, direction=Direction.CREDIT,
+            transaction_id=tid, description=f'Combinada ganada #{combined_bet.bet_id} - stake',
+            combined_bet=combined_bet,
+        )
+        LedgerEntry.objects.create(
+            account_type=AccountType.HOUSE, user=None,
+            amount=payout, direction=Direction.DEBIT,
+            transaction_id=tid, description=f'Payout combinada #{combined_bet.bet_id}',
+            combined_bet=combined_bet,
+        )
+        LedgerEntry.objects.create(
+            account_type=AccountType.USER_WALLET, user=user,
+            amount=payout, direction=Direction.CREDIT,
+            transaction_id=tid, description=f'Payout combinada #{combined_bet.bet_id}',
+            combined_bet=combined_bet,
+        )
+        return tid
+
+    @classmethod
+    @transaction.atomic
+    def settle_lost_combined(cls, user, stake: Decimal, combined_bet) -> uuid.UUID:
+        """Combinada perdida."""
+        tid = uuid.uuid4()
+        LedgerEntry.objects.create(
+            account_type=AccountType.PENDING_BETS, user=user,
+            amount=stake, direction=Direction.DEBIT,
+            transaction_id=tid, description=f'Combinada perdida #{combined_bet.bet_id}',
+            combined_bet=combined_bet,
+        )
+        LedgerEntry.objects.create(
+            account_type=AccountType.HOUSE, user=None,
+            amount=stake, direction=Direction.CREDIT,
+            transaction_id=tid, description=f'Combinada perdida #{combined_bet.bet_id}',
+            combined_bet=combined_bet,
+        )
+        return tid
+
+    @classmethod
+    @transaction.atomic
+    def void_combined_bet(cls, user, stake: Decimal, combined_bet) -> uuid.UUID:
+        """Anular combinada: devolver stake."""
+        tid = uuid.uuid4()
+        LedgerEntry.objects.create(
+            account_type=AccountType.PENDING_BETS, user=user,
+            amount=stake, direction=Direction.DEBIT,
+            transaction_id=tid, description=f'Combinada anulada #{combined_bet.bet_id}',
+            combined_bet=combined_bet,
+        )
+        LedgerEntry.objects.create(
+            account_type=AccountType.USER_WALLET, user=user,
+            amount=stake, direction=Direction.CREDIT,
+            transaction_id=tid, description=f'Combinada anulada #{combined_bet.bet_id}',
+            combined_bet=combined_bet,
+        )
+        return tid
 
     @staticmethod
     def _check_deposit_limits(user, amount: Decimal):

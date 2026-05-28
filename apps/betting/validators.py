@@ -47,3 +47,46 @@ def validate_combined_bet_selections(selections):
             "No puedes combinar selecciones del mismo mercado "
             "(son mutuamente excluyentes)."
         )
+
+
+def validate_combined_bet_placement(user, selections, stake: Decimal):
+    """Valida que una combinada pueda ser colocada."""
+    from apps.betting.models import EventStatus, Market
+
+    errors = []
+    if not user.is_active_for_betting:
+        errors.append("Tu cuenta no está habilitada para apostar.")
+    if len(selections) < 2:
+        errors.append("Se necesitan al menos 2 selecciones para una combinada.")
+
+    if stake < MIN_STAKE:
+        errors.append(f"Apuesta mínima: {MIN_STAKE} fichas.")
+    if stake > MAX_STAKE:
+        errors.append(f"Apuesta máxima: {MAX_STAKE} fichas.")
+
+    from apps.wallet.models import WalletService
+    balance = WalletService.get_balance(user)
+    if balance < stake:
+        errors.append(f"Saldo insuficiente. Disponible: {balance:.2f} fichas.")
+
+    # Validar cada selección
+    for sel in selections:
+        event = sel.market.event
+        if event.status == EventStatus.FINISHED:
+            errors.append(f"'{sel.name}' — El evento ya finalizó.")
+            continue
+        if event.scheduled_at <= timezone.now() and event.status != EventStatus.LIVE:
+            errors.append(f"'{sel.name}' — El evento ya comenzó.")
+            continue
+
+        market = Market.objects.get(id=sel.market_id)
+        if market.is_suspended:
+            errors.append(f"'{sel.name}' — Mercado suspendido.")
+
+    # Mutuamente excluyentes
+    try:
+        validate_combined_bet_selections(selections)
+    except ValueError as e:
+        errors.append(str(e))
+
+    return errors

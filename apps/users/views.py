@@ -14,33 +14,18 @@ from .forms import RegistrationForm, SelfExclusionForm, GamblingLimitForm
 from .models import AccountStatus, GamblingLimit, GamblingLimitType
 
 
-
 @require_GET
 def dni_lookup_view(request):
-    """
-    Proxy para consultar DNI contra APISPerú.
-    El token se mantiene en el servidor; el browser nunca lo ve.
-    """
     dni = request.GET.get('dni', '').strip()
-
-    # Validación básica antes de llamar a la API externa
     if len(dni) != 8 or not dni.isdigit():
         return JsonResponse({'error': 'DNI inválido. Debe tener exactamente 8 dígitos.'}, status=400)
-
     token = settings.APISPERU_TOKEN
     if not token:
         return JsonResponse({'error': 'Servicio de consulta DNI no configurado.'}, status=503)
-
     url = settings.APISPERU_DNI_URL.format(dni=dni)
     try:
-        response = http_requests.get(
-            url,
-            params={'token': token},
-            timeout=8,
-        )
-        # APISPerú siempre devuelve HTTP 200, usa success:true/false en el body
+        response = http_requests.get(url, params={'token': token}, timeout=8)
         data = response.json()
-
         if data.get('success') is True:
             return JsonResponse({
                 'success': True,
@@ -54,10 +39,8 @@ def dni_lookup_view(request):
                 ).strip(),
             })
         else:
-            # success:false — el DNI no fue encontrado en RENIEC
             msg = data.get('message', 'DNI no encontrado en RENIEC.')
             return JsonResponse({'error': msg}, status=404)
-
     except http_requests.Timeout:
         return JsonResponse({'error': 'Tiempo de espera agotado. Intenta de nuevo.'}, status=504)
     except http_requests.RequestException:
@@ -67,25 +50,20 @@ def dni_lookup_view(request):
 
 
 def register_view(request):
-    """Registro con KYC simulado (DNI + edad)."""
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
             user.account_status = AccountStatus.VERIFIED
             user.save()
-            # Crear límites por defecto
             GamblingLimit.objects.create(
-                user=user, limit_type=GamblingLimitType.DAILY,
-                amount=Decimal('500.0000'),
+                user=user, limit_type=GamblingLimitType.DAILY, amount=Decimal('500.0000'),
             )
             GamblingLimit.objects.create(
-                user=user, limit_type=GamblingLimitType.WEEKLY,
-                amount=Decimal('2000.0000'),
+                user=user, limit_type=GamblingLimitType.WEEKLY, amount=Decimal('2000.0000'),
             )
             GamblingLimit.objects.create(
-                user=user, limit_type=GamblingLimitType.MONTHLY,
-                amount=Decimal('5000.0000'),
+                user=user, limit_type=GamblingLimitType.MONTHLY, amount=Decimal('5000.0000'),
             )
             login(request, user)
             messages.success(request, '¡Registro exitoso! Tu cuenta ha sido verificada.')
@@ -96,12 +74,10 @@ def register_view(request):
 
 
 def login_view(request):
-    """Inicio de sesión."""
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
-            # Registrar IP para anti-fraude
             ip = request.META.get('REMOTE_ADDR')
             user.last_login_ip = ip
             user.save(update_fields=['last_login_ip'])
@@ -114,7 +90,6 @@ def login_view(request):
 
 
 def logout_view(request):
-    """Cierre de sesión."""
     logout(request)
     messages.info(request, 'Has cerrado sesión.')
     return redirect('users:login')
@@ -122,27 +97,42 @@ def logout_view(request):
 
 @login_required
 def profile_view(request):
-    """Perfil del usuario con controles de juego responsable."""
-    from apps.wallet.models import WalletService
+    from apps.wallet.models import WalletService, LedgerEntry
     user = request.user
     balance = WalletService.get_balance(user)
     pending = WalletService.get_pending_balance(user)
-    limits = user.limits.all()
+    limits = list(user.limits.all())
 
-    # Aplicar límites pendientes si corresponde
     for limit in limits:
         limit.apply_pending_if_ready()
+
+    transactions = LedgerEntry.objects.filter(
+        user=user
+    ).order_by('-created_at')[:10]
+
+    limit_data = {}
+    for l in limits:
+        limit_data[l.limit_type] = {
+            'amount': l.amount,
+            'pending_amount': l.pending_amount,
+            'pending_effective_at': l.pending_effective_at,
+        }
 
     return render(request, 'users/profile.html', {
         'balance': balance,
         'pending': pending,
         'limits': limits,
+        'limit_data': limit_data,
+        'transactions': transactions,
+        'is_self_excluded': (
+            user.self_excluded_permanent or
+            (user.self_excluded_until and __import__('django.utils.timezone', fromlist=['timezone']).timezone.now() < user.self_excluded_until)
+        ),
     })
 
 
 @login_required
 def self_exclusion_view(request):
-    """Autoexclusión: temporal o permanente."""
     if request.method == 'POST':
         form = SelfExclusionForm(request.POST)
         if form.is_valid():
@@ -160,7 +150,6 @@ def self_exclusion_view(request):
 
 @login_required
 def update_limits_view(request):
-    """Actualizar límites de depósito."""
     if request.method == 'POST':
         form = GamblingLimitForm(request.POST)
         if form.is_valid():

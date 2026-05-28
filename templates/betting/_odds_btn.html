@@ -1,29 +1,60 @@
-{% load betting_extras %}
-
+{% load betting_extras l10n %}
 {% if user.is_authenticated and not market.is_suspended %}
-<a href="{% url 'betting:place_bet_form' sel.id %}" class="fb-odds-btn text-decoration-none" title="Apostar a {{ sel.name }}">
-  <div class="fb-odds-label text-truncate text-center w-100 px-1">
-    {% if sel.name == '1' %}Local
-    {% elif sel.name == 'X' %}Empate
-    {% elif sel.name == '2' %}Visitante
-    {% elif sel.name|lower == 'over 2.5' %}Más 2.5
-    {% elif sel.name|lower == 'under 2.5' %}Menos 2.5
-    {% else %}{{ sel.name }}
-    {% endif %}
-  </div>
-  <div class="fb-odds-val">{{ sel.odds|odds_format }}</div>
-</a>
+<div class="fb-odds-wrap">
+  <button type="button" class="fb-odds-btn" title="Apostar a {{ sel.name }}"
+          x-data="{ oddsFlash: false }"
+          :class="{ 'selected': $store.betslip.selectionId === {{ sel.id }}, 'flash-up': oddsFlash }"
+          @click="oddsFlash = true; setTimeout(() => oddsFlash = false, 800); $store.betslip.selectSelection(
+            {{ sel.id }},
+            '{{ sel.odds|unlocalize }}',
+            '{{ sel.name|escapejs }}',
+            {{ event.id }},
+            '{{ event.home_team|escapejs }} vs {{ event.away_team|escapejs }}',
+            '{{ market.get_market_type_display|escapejs }}',
+            '{% if sel.name == "1" %}Local{% elif sel.name == "X" %}Empate{% elif sel.name == "2" %}Visitante{% elif sel.name|lower == "over 2.5" %}Más 2.5{% elif sel.name|lower == "under 2.5" %}Menos 2.5{% else %}{{ sel.name }}{% endif %}',
+            '{{ event.status|escapejs }}',
+            {{ market.is_suspended|yesno:"true,false" }},
+            {{ balance|default:'0'|unlocalize }}
+          )">
+    <div class="fb-odds-label text-truncate text-center w-100 px-1">
+      {% if sel.name == '1' %}Local
+      {% elif sel.name == 'X' %}Empate
+      {% elif sel.name == '2' %}Visitante
+      {% elif sel.name|lower == 'over 2.5' %}Más 2.5
+      {% elif sel.name|lower == 'under 2.5' %}Menos 2.5
+      {% else %}{{ sel.name }}
+      {% endif %}
+    </div>
+    <div class="fb-odds-val">{{ sel.odds|odds_format }}</div>
+  </button>
+  <button class="fb-odds-add" title="Agregar a combinada"
+          @click="$store.betslip.addToCombined(
+            {{ sel.id }},
+            '{{ sel.odds|unlocalize }}',
+            '{{ sel.name|escapejs }}',
+            {{ event.id }},
+            '{{ event.home_team|escapejs }} vs {{ event.away_team|escapejs }}',
+            '{{ market.get_market_type_display|escapejs }}',
+            '{% if sel.name == "1" %}Local{% elif sel.name == "X" %}Empate{% elif sel.name == "2" %}Visitante{% elif sel.name|lower == "over 2.5" %}Más 2.5{% elif sel.name|lower == "under 2.5" %}Menos 2.5{% else %}{{ sel.name }}{% endif %}',
+            '{{ event.status|escapejs }}',
+            {{ market.is_suspended|yesno:"true,false" }}
+          ); $store.betslip.isOpen = true">
+    <i class="bi bi-plus-lg"></i>
+  </button>
+</div>
 {% else %}
-<div class="fb-odds-btn {% if market.is_suspended %}opacity-50{% endif %}" title="{% if market.is_suspended %}Mercado Suspendido{% else %}Inicia sesión para apostar{% endif %}">
-  <div class="fb-odds-label text-truncate text-center w-100 px-1">
-    {% if sel.name == '1' %}Local
-    {% elif sel.name == 'X' %}Empate
-    {% elif sel.name == '2' %}Visitante
-    {% elif sel.name|lower == 'over 2.5' %}Más 2.5
-    {% elif sel.name|lower == 'under 2.5' %}Menos 2.5
-    {% else %}{{ sel.name }}
-    {% endif %}
+<div class="fb-odds-wrap">
+  <div class="fb-odds-btn {% if market.is_suspended %}opacity-50{% endif %}" title="{% if market.is_suspended %}Mercado Suspendido{% else %}Inicia sesión para apostar{% endif %}">
+    <div class="fb-odds-label text-truncate text-center w-100 px-1">
+      {% if sel.name == '1' %}Local
+      {% elif sel.name == 'X' %}Empate
+      {% elif sel.name == '2' %}Visitante
+      {% elif sel.name|lower == 'over 2.5' %}Más 2.5
+      {% elif sel.name|lower == 'under 2.5' %}Menos 2.5
+      {% else %}{{ sel.name }}
+      {% endif %}
+    </div>
+    <div class="fb-odds-val" style="color: var(--fb-text-muted);">{{ sel.odds|odds_format }}</div>
   </div>
-  <div class="fb-odds-val" style="color: var(--fb-text-muted);">{{ sel.odds|odds_format }}</div>
 </div>
 {% endif %}

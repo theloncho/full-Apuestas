@@ -5,7 +5,7 @@
 {% block title %}Deportes — FairBet Lab{% endblock %}
 
 {% block content %}
-<div style="max-width: 800px; margin: 0 auto;">
+<div class="fb-main-no-betslip">
 
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="text-xl text-primary font-medium">
@@ -13,23 +13,50 @@
     </h1>
   </div>
 
-  <!-- Hero Carousel -->
-  <div class="fb-hero-carousel" x-data="{ slide: 0 }" x-init="setInterval(() => { slide = (slide + 1) % 2 }, 5000)">
+  <!-- Hero Carousel Premium -->
+  <div class="fb-hero-carousel" x-data="{ slide: 0 }" x-init="setInterval(() => { slide = (slide + 1) % 3 }, 5500)">
     <!-- Slide 1 -->
-    <div class="fb-hero-slide" :style="{ opacity: slide === 0 ? 1 : 0 }" style="background-image: url('{% static 'images/libertadores.png' %}');">
+    <div class="fb-hero-slide" :style="{ opacity: slide === 0 ? 1 : 0, zIndex: slide === 0 ? 2 : 1 }" style="background-image: url('{% static 'images/libertadores.png' %}');">
       <div class="fb-hero-overlay">
-        <span class="fb-hero-tag">Súper Cuota</span>
-        <h2 class="text-white mb-2" style="font-weight: 800; font-size: 24px;">Noche de Libertadores</h2>
-        <p class="text-light mb-0 text-sm" style="max-width: 300px;">Multiplica tus ganancias con las mejores cuotas del mercado.</p>
+        <span class="fb-hero-tag"><i class="bi bi-lightning-fill me-1"></i>Súper Cuota</span>
+        <h2 class="fb-hero-title">Noche de Libertadores</h2>
+        <p class="fb-hero-desc">Multiplica tus ganancias con las mejores cuotas del mercado.</p>
+        <a href="#" class="fb-hero-cta">Ver partidos <i class="bi bi-arrow-right ms-1"></i></a>
       </div>
     </div>
     <!-- Slide 2 -->
-    <div class="fb-hero-slide" :style="{ opacity: slide === 1 ? 1 : 0 }" style="background-image: url('{% static 'images/welcome.png' %}');">
+    <div class="fb-hero-slide" :style="{ opacity: slide === 1 ? 1 : 0, zIndex: slide === 1 ? 2 : 1 }" style="background-image: url('{% static 'images/welcome.png' %}');">
       <div class="fb-hero-overlay">
-        <span class="fb-hero-tag" style="background-color: var(--fb-warning);">Promoción Especial</span>
-        <h2 class="text-white mb-2" style="font-weight: 800; font-size: 24px;">Lluvia de Ganancias</h2>
-        <p class="text-light mb-0 text-sm" style="max-width: 300px;">Únete a la mesa de los ganadores y duplica tus resultados hoy.</p>
+        <span class="fb-hero-tag" style="background-color: var(--fb-warning);color:#0f172a;"><i class="bi bi-gift-fill me-1"></i>Promo</span>
+        <h2 class="fb-hero-title">Lluvia de Ganancias</h2>
+        <p class="fb-hero-desc">Únete a la mesa de los ganadores y duplica tus resultados hoy.</p>
+        <a href="#" class="fb-hero-cta">Reclamar <i class="bi bi-arrow-right ms-1"></i></a>
       </div>
+    </div>
+    <!-- Slide 3: Dynamic w/ match data -->
+    <div class="fb-hero-slide" :style="{ opacity: slide === 2 ? 1 : 0, zIndex: slide === 2 ? 2 : 1 }" style="background: linear-gradient(135deg, #1a2030 0%, #0B0F17 100%);">
+      <div class="fb-hero-overlay" style="background: linear-gradient(135deg, rgba(15,23,42,0.85) 0%, rgba(15,23,42,0.1) 100%);">
+        {% if upcoming.0 %}
+        <span class="fb-hero-tag" style="background-color: #FF4D4D;color:#fff;"><span class="pulse-dot me-1"></span>EN VIVO</span>
+        <h2 class="fb-hero-title">{{ upcoming.0.home_team }} vs {{ upcoming.0.away_team }}</h2>
+        <div class="fb-hero-live-score">
+          <span class="fb-hero-score">{{ upcoming.0.result_home|default:"0" }}</span>
+          <span class="fb-hero-score-divider">:</span>
+          <span class="fb-hero-score">{{ upcoming.0.result_away|default:"0" }}</span>
+        </div>
+        <a href="{% url 'betting:event_detail' upcoming.0.id %}" class="fb-hero-cta">Apostar ahora <i class="bi bi-arrow-right ms-1"></i></a>
+        {% else %}
+        <span class="fb-hero-tag" style="background-color: #2D7CFF;color:#fff;"><i class="bi bi-megaphone-fill me-1"></i>Destacado</span>
+        <h2 class="fb-hero-title">FairBet Lab</h2>
+        <p class="fb-hero-desc">La plataforma educativa de apuestas más avanzada.</p>
+        {% endif %}
+      </div>
+    </div>
+    <!-- Dots Navigation -->
+    <div class="fb-hero-dots">
+      <button class="fb-hero-dot" :class="{ active: slide === 0 }" @click="slide = 0"></button>
+      <button class="fb-hero-dot" :class="{ active: slide === 1 }" @click="slide = 1"></button>
+      <button class="fb-hero-dot" :class="{ active: slide === 2 }" @click="slide = 2"></button>
     </div>
   </div>
 
@@ -59,46 +86,56 @@
     <div>
       {% for event in upcoming %}
       <div class="fb-event-card {% if forloop.first %}fb-hot-match{% endif %}"
+           :class="{ 'flash-up': evFlash }"
+           x-data="{ betCount: Math.floor(Math.random() * 50 + 5), evOddsUp: false, evFlash: false }"
            x-show="
              currentTab === 'all' || currentTab === 'top' || 
              (currentTab === 'live' && '{{ event.status }}' === 'en_vivo') || 
              (currentTab === 'upcoming' && '{{ event.status }}' === 'programado')
            "
+           x-init="setInterval(() => { evOddsUp = !evOddsUp; evFlash = true; setTimeout(() => evFlash = false, 800); }, 4000)"
            x-transition>
       {% if forloop.first %}
         <div class="fb-hot-badge"><i class="bi bi-fire"></i> HOT</div>
       {% endif %}
-      <div class="fb-event-header mb-2">
-        <div class="fb-event-sub d-flex align-items-center gap-2">
+      <div class="fb-event-header">
+        <div class="fb-event-meta">
           {% if event.status == 'en_vivo' %}
-            <span class="fb-badge-live"><span class="pulse-dot"></span> EN VIVO</span>
+            <span class="fb-badge-live"><span class="pulse-dot"></span> EN VIVO <span class="fb-live-minute">45'</span></span>
           {% else %}
-            <span>{{ event.scheduled_at|date:"d M H:i" }}</span>
+            <span class="fb-event-date"><i class="bi bi-calendar3 me-1"></i>{{ event.scheduled_at|date:"d M H:i" }}</span>
           {% endif %}
-          <span class="text-muted text-xs text-uppercase ms-2"><i class="bi bi-trophy"></i> {{ event.sport.name }}</span>
+          <span class="fb-event-sport"><i class="bi bi-trophy"></i> {{ event.sport.name }}</span>
+          <span class="fb-event-betters"><i class="bi bi-people-fill me-1"></i><span x-text="betCount"></span> apostando</span>
         </div>
-        <a href="{% url 'betting:event_detail' event.id %}" class="text-muted text-xs text-decoration-none">
-          +{{ event.markets.count }} mercados <i class="bi bi-chevron-right ms-1"></i>
+        <a href="{% url 'betting:event_detail' event.id %}" class="fb-event-markets-link">
+          +{{ event.markets.count }} <i class="bi bi-chevron-right"></i>
         </a>
       </div>
 
-      <div class="d-flex gap-3 align-items-center justify-content-between">
+      <div class="fb-event-main">
         <!-- Teams & Score -->
-        <div class="fb-event-teams flex-grow-1" style="min-width: 0;">
+        <div class="fb-event-teams">
           <div class="fb-team-row">
             <div class="fb-team-shield c2">{{ event.home_team|make_list|first }}</div>
-            <span class="fb-team-name text-truncate">{{ event.home_team }}</span>
-            <span class="fb-event-score">{% if event.status == 'en_vivo' %}{{ event.result_home|default:"0" }}{% endif %}</span>
+            <span class="fb-team-name">{{ event.home_team }}</span>
+            <span class="fb-event-score fs-5 fw-bold">{{ event.result_home|default:"0" }}</span>
           </div>
-          <div class="fb-team-row mt-1">
+          <div class="fb-team-row">
             <div class="fb-team-shield c1">{{ event.away_team|make_list|first }}</div>
-            <span class="fb-team-name text-truncate">{{ event.away_team }}</span>
-            <span class="fb-event-score">{% if event.status == 'en_vivo' %}{{ event.result_away|default:"0" }}{% endif %}</span>
+            <span class="fb-team-name">{{ event.away_team }}</span>
+            <span class="fb-event-score fs-5 fw-bold">{{ event.result_away|default:"0" }}</span>
           </div>
+          {% if event.status == 'en_vivo' %}
+          <div class="fb-event-stats mt-1">
+            <span><i class="bi bi-droplet-fill me-1" style="color:#2D7CFF;font-size:9px;"></i>58%</span>
+            <span><i class="bi bi-square-fill me-1" style="color:var(--fb-warning);font-size:9px;"></i>3 Tarjetas</span>
+          </div>
+          {% endif %}
         </div>
         
         <!-- Odds Buttons (1X2) -->
-        <div class="fb-odds-grid" style="width: 210px; flex-shrink: 0;">
+        <div class="fb-odds-grid">
           {% for market in event.markets.all %}
             {% if market.market_type == '1X2' %}
               {% for sel in market.selections.all|sort_1x2 %}
@@ -108,12 +145,18 @@
           {% endfor %}
         </div>
       </div>
+      {% if forloop.first %}
+      <div class="fb-event-footer">
+        <span class="fb-event-badge-guarantee"><i class="bi bi-shield-check me-1"></i>Garantía de cuota</span>
+        <span class="fb-event-badge-livebet"><i class="bi bi-graph-up-arrow me-1"></i>Live betting disponible</span>
+      </div>
+      {% endif %}
     </div>
     {% empty %}
-    <div class="p-5 text-center text-muted border border-secondary rounded" style="border-color: var(--fb-border) !important;">
-      <i class="bi bi-calendar-x mb-3 d-block" style="font-size: 32px; opacity: 0.3;"></i>
-      <h6 class="font-medium text-white mb-1">No hay eventos disponibles</h6>
-      <p class="mb-0 text-sm">Vuelve más tarde para ver nuevos partidos.</p>
+    <div class="fb-empty-state">
+      <i class="bi bi-calendar-x"></i>
+      <h6>No hay eventos disponibles</h6>
+      <p>Vuelve más tarde para ver nuevos partidos.</p>
     </div>
     {% endfor %}
   </div>
@@ -121,23 +164,21 @@
   <!-- Finished Events -->
   {% if finished %}
   <div x-show="currentTab === 'all'">
-    <div class="mt-5 mb-3 text-sm text-muted text-uppercase font-medium tracking-wide">
-      <i class="bi bi-check2-all me-1"></i> Finalizados recientes
+    <div class="fb-section-title mt-4">
+      <i class="bi bi-check2-all me-1"></i> Finalizados
     </div>
-  <div style="opacity: 0.6;">
+  <div class="fb-finished-list">
     {% for event in finished %}
-    <div class="fb-event-card border-0 mb-2 py-2" style="background: transparent;">
-      <div class="d-flex gap-3 align-items-center justify-content-between">
-        <div class="fb-event-sub" style="width: 60px;">{{ event.scheduled_at|date:"d M" }}<br>FT</div>
-        <div class="fb-event-teams flex-grow-1">
-          <div class="fb-team-row">
-            <span class="fb-team-name text-muted">{{ event.home_team }}</span>
-            <span class="fb-event-score text-muted">{{ event.result_home|default:"0" }}</span>
-          </div>
-          <div class="fb-team-row">
-            <span class="fb-team-name text-muted">{{ event.away_team }}</span>
-            <span class="fb-event-score text-muted">{{ event.result_away|default:"0" }}</span>
-          </div>
+    <div class="fb-finished-item">
+      <div class="fb-finished-date">{{ event.scheduled_at|date:"d M" }}<br>FT</div>
+      <div class="fb-finished-body">
+        <div class="fb-finished-team">
+          <span class="fb-team-name-sm">{{ event.home_team }}</span>
+          <span class="fb-finished-score">{{ event.result_home|default:"0" }}</span>
+        </div>
+        <div class="fb-finished-team">
+          <span class="fb-team-name-sm">{{ event.away_team }}</span>
+          <span class="fb-finished-score">{{ event.result_away|default:"0" }}</span>
         </div>
       </div>
     </div>
