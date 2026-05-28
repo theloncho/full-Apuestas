@@ -1,0 +1,427 @@
+/* ================================================================
+   FairBet Lab — Sportsbook Master Design System
+   ================================================================ */
+
+:root {
+  /* Fondo Principal & Sidebar */
+  --fb-bg: #0d1117;
+  /* Fondo Cards & Panels */
+  --fb-surface: #111827;
+  /* Bordes */
+  --fb-border: #1e2733;
+  --fb-border-hover: #2d3748;
+  
+  /* Acentos (Dorado) */
+  --fb-primary: #f0b429;
+  --fb-primary-hover: #f0b42918;
+  --fb-primary-border: #f0b42933;
+  
+  /* Texto */
+  --fb-text: #e2e8f0;
+  --fb-text-sec: #9ca3af;
+  --fb-text-muted: #6b7280;
+  
+  /* Estados */
+  --fb-success: #4ade80;
+  --fb-danger: #f87171;
+  --fb-info: #60a5fa;
+  --fb-warning: #fbbf24;
+  
+  /* Responsible Gaming Bar */
+  --fb-rg-bg: #1a1200;
+  
+  /* Fuentes */
+  --font-family-base: system-ui, -apple-system, sans-serif;
+}
+
+/* ─── Global Reset & Base ──────────────────────────────────────── */
+body {
+  font-family: var(--font-family-base);
+  background-color: var(--fb-bg);
+  color: var(--fb-text);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-size: 13px; /* Default body size */
+  line-height: 1.5;
+}
+
+a { text-decoration: none; color: inherit; }
+a:hover { color: var(--fb-primary); }
+
+h1 { font-size: 22px; font-weight: 500; margin: 0; }
+h2 { font-size: 18px; font-weight: 500; margin: 0; }
+h3, h4, h5, h6 { font-weight: 500; margin: 0; }
+
+/* Tipografía helpers */
+.text-xs { font-size: 10px; }
+.text-sm { font-size: 11px; }
+.text-base { font-size: 13px; }
+.text-lg { font-size: 15px; }
+.text-xl { font-size: 18px; }
+.text-2xl { font-size: 22px; }
+
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+
+.text-primary { color: var(--fb-primary) !important; }
+.text-secondary { color: var(--fb-text-sec) !important; }
+.text-muted { color: var(--fb-text-muted) !important; }
+.text-success { color: var(--fb-success) !important; }
+.text-danger { color: var(--fb-danger) !important; }
+.text-info { color: var(--fb-info) !important; }
+.text-warning { color: var(--fb-warning) !important; }
+
+/* ─── Layout General ───────────────────────────────────────────── */
+
+/* Responsible Gaming Bar */
+.fb-rg-bar {
+  background-color: var(--fb-rg-bg);
+  border-bottom: 1px solid var(--fb-primary-border);
+  padding: 6px 12px;
+  font-size: 11px;
+  color: #cda34f; /* Dorado apagado */
+  text-align: center;
+  position: sticky;
+  top: 56px;
+  z-index: 1010;
+}
+
+/* Topbar */
+.fb-topbar {
+  background-color: var(--fb-surface);
+  border-bottom: 1px solid var(--fb-border);
+  height: 56px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+.fb-logo {
+  color: var(--fb-primary);
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fb-balance-chip {
+  background-color: #14532d;
+  color: var(--fb-success);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Grid Principal 3 Columnas */
+.fb-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar (Left) */
+.fb-sidebar {
+  width: 200px;
+  background-color: var(--fb-bg);
+  border-right: 1px solid var(--fb-border);
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 12px 0;
+}
+.fb-sidebar-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--fb-text-muted);
+  padding: 0 14px;
+  margin: 16px 0 8px 0;
+  font-weight: 500;
+}
+.fb-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  color: var(--fb-text-sec);
+  font-size: 12px;
+  border-left: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+.fb-sidebar-item:hover {
+  background-color: var(--fb-border);
+  color: var(--fb-text);
+}
+.fb-sidebar-item.active {
+  background-color: var(--fb-primary-hover);
+  color: var(--fb-primary);
+  border-left-color: var(--fb-primary);
+}
+
+/* Main Content (Center) */
+.fb-main {
+  flex: 1;
+  background-color: var(--fb-bg);
+  overflow-y: auto;
+  padding: 16px 24px;
+}
+
+/* Betslip (Right) */
+.fb-betslip {
+  width: 240px;
+  background-color: var(--fb-surface);
+  border-left: 1px solid var(--fb-border);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.fb-betslip-header {
+  padding: 12px;
+  border-bottom: 1px solid var(--fb-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 500;
+}
+.fb-betslip-badge {
+  background-color: var(--fb-primary);
+  color: #000;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Footer */
+.fb-footer {
+  background-color: #0a0f18;
+  border-top: 1px solid var(--fb-border);
+  padding: 16px;
+  text-align: center;
+  font-size: 10px;
+  color: #374151;
+  z-index: 1000;
+}
+
+/* ─── Componentes: Tabs ────────────────────────────────────────── */
+.fb-tabs {
+  display: flex;
+  gap: 16px;
+  border-bottom: 1px solid var(--fb-border);
+  margin-bottom: 16px;
+}
+.fb-tab {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--fb-text-sec);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+.fb-tab:hover {
+  color: var(--fb-text);
+}
+.fb-tab.active {
+  color: var(--fb-primary);
+  border-bottom-color: var(--fb-primary);
+  background-color: var(--fb-primary-hover);
+}
+
+/* ─── Componentes: Tarjeta de Evento ───────────────────────────── */
+.fb-event-card {
+  background-color: var(--fb-surface);
+  border: 1px solid var(--fb-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: opacity 0.2s ease-in;
+}
+
+.fb-event-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.fb-event-teams {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fb-team-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.fb-team-name {
+  font-size: 13px;
+  color: var(--fb-text);
+  font-weight: 500;
+}
+.fb-event-score {
+  font-size: 14px;
+  color: var(--fb-primary);
+  font-weight: 500;
+}
+.fb-event-sub {
+  font-size: 11px;
+  color: var(--fb-text-muted);
+}
+
+/* ─── Componentes: Botones de Cuotas ───────────────────────────── */
+.fb-odds-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.fb-odds-btn {
+  background-color: #1a2535;
+  border: 1px solid #2d3748;
+  border-radius: 6px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.fb-odds-btn:hover {
+  background-color: #1e3a5f;
+  border-color: rgba(96, 165, 250, 0.5); /* blue at 50% */
+}
+.fb-odds-btn.selected {
+  background-color: var(--fb-primary-hover);
+  border-color: var(--fb-primary);
+}
+.fb-odds-label {
+  font-size: 10px;
+  color: var(--fb-text-muted);
+  margin-bottom: 2px;
+}
+.fb-odds-val {
+  font-size: 13px;
+  color: var(--fb-primary);
+  font-weight: 500;
+}
+.fb-odds-btn.up .fb-odds-val { color: var(--fb-success); }
+.fb-odds-btn.down .fb-odds-val { color: var(--fb-danger); }
+
+/* ─── Badges & Tags ────────────────────────────────────────────── */
+.fb-badge-live {
+  background-color: rgba(220, 38, 38, 0.12); /* #dc262620 */
+  color: var(--fb-danger);
+  border: 1px solid rgba(220, 38, 38, 0.26); /* #dc262644 */
+  border-radius: 10px;
+  font-size: 10px;
+  padding: 2px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+}
+.fb-live-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--fb-danger);
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Status Badges */
+.fb-status-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  text-transform: uppercase;
+}
+.fb-status-accepted { background-color: #1e3a5f; color: var(--fb-info); }
+.fb-status-won      { background-color: #14532d; color: var(--fb-success); }
+.fb-status-lost     { background-color: #450a0a; color: var(--fb-danger); }
+.fb-status-void     { background-color: #1a1a1a; color: var(--fb-text-sec); }
+.fb-status-settling { background-color: #451a03; color: var(--fb-warning); }
+
+/* ─── Botones Globales ─────────────────────────────────────────── */
+.btn-gold {
+  background-color: var(--fb-primary);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.btn-gold:hover { opacity: 0.9; }
+
+.btn-cashout {
+  background-color: #1a2535;
+  border: 1px solid var(--fb-info);
+  color: var(--fb-info);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn-danger-outline {
+  background-color: transparent;
+  border: 1px solid var(--fb-danger);
+  color: var(--fb-danger);
+  border-radius: 6px;
+  padding: 8px 16px;
+}
+
+/* ─── Formularios & Inputs ─────────────────────────────────────── */
+.fb-input {
+  background-color: var(--fb-bg);
+  border: 1px solid #2d3748;
+  color: var(--fb-text);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.fb-input:focus {
+  border-color: var(--fb-primary);
+}
+
+.fb-form-label {
+  font-size: 11px;
+  color: var(--fb-text-sec);
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* ─── Utilidades ───────────────────────────────────────────────── */
+.scroll-hidden::-webkit-scrollbar { display: none; }
+.scroll-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .fb-sidebar, .fb-betslip {
+    display: none;
+  }
+  .fb-topbar { padding: 0 12px; }
+  .fb-main { padding: 12px; }
+}

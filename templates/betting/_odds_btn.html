@@ -1,0 +1,29 @@
+{% load betting_extras %}
+
+{% if user.is_authenticated and not market.is_suspended %}
+<a href="{% url 'betting:place_bet_form' sel.id %}" class="fb-odds-btn text-decoration-none" title="Apostar a {{ sel.name }}">
+  <div class="fb-odds-label text-truncate text-center w-100 px-1">
+    {% if sel.name == '1' %}Local
+    {% elif sel.name == 'X' %}Empate
+    {% elif sel.name == '2' %}Visitante
+    {% elif sel.name|lower == 'over 2.5' %}Más 2.5
+    {% elif sel.name|lower == 'under 2.5' %}Menos 2.5
+    {% else %}{{ sel.name }}
+    {% endif %}
+  </div>
+  <div class="fb-odds-val">{{ sel.odds|odds_format }}</div>
+</a>
+{% else %}
+<div class="fb-odds-btn {% if market.is_suspended %}opacity-50{% endif %}" title="{% if market.is_suspended %}Mercado Suspendido{% else %}Inicia sesión para apostar{% endif %}">
+  <div class="fb-odds-label text-truncate text-center w-100 px-1">
+    {% if sel.name == '1' %}Local
+    {% elif sel.name == 'X' %}Empate
+    {% elif sel.name == '2' %}Visitante
+    {% elif sel.name|lower == 'over 2.5' %}Más 2.5
+    {% elif sel.name|lower == 'under 2.5' %}Menos 2.5
+    {% else %}{{ sel.name }}
+    {% endif %}
+  </div>
+  <div class="fb-odds-val" style="color: var(--fb-text-muted);">{{ sel.odds|odds_format }}</div>
+</div>
+{% endif %}

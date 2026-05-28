@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Admin — FairBet Lab{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-2">
+  
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="text-2xl text-white font-medium mb-1">Panel de Operador</h1>
+      <div class="text-sm text-muted">Bienvenido admin, hoy es {% now "d M Y, H:i" %}</div>
+    </div>
+    <a href="{% url 'dashboard:export_mincetur' %}" class="btn-gold text-decoration-none d-flex align-items-center gap-2 px-3 py-2">
+      <i class="bi bi-download"></i> Exportar MINCETUR
+    </a>
+  </div>
+
+  <!-- KPIs -->
+  <div class="row g-3 mb-4">
+    <!-- GGR -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="fb-event-card h-100" style="border-top: 3px solid var(--fb-primary);">
+        <div class="text-xs text-muted text-uppercase mb-2">Gross Gaming Revenue (GGR)</div>
+        <div class="text-2xl text-primary font-medium mb-1">{{ ggr|floatformat:2|default:"0.00" }}</div>
+        <div class="text-xs text-success"><i class="bi bi-arrow-up-right me-1"></i> Volumen: {{ total_stakes|floatformat:2|default:"0.00" }} fichas</div>
+      </div>
+    </div>
+    <!-- Apuestas Activas -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="fb-event-card h-100" style="border-top: 3px solid var(--fb-info);">
+        <div class="text-xs text-muted text-uppercase mb-2">Volumen de Apuestas</div>
+        <div class="text-2xl text-white font-medium mb-1">{{ total_bets|default:"0" }}</div>
+        <div class="text-xs text-info"><i class="bi bi-clock-history me-1"></i> {{ active_bets|default:"0" }} apuestas activas</div>
+      </div>
+    </div>
+    <!-- Usuarios Registrados -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="fb-event-card h-100" style="border-top: 3px solid var(--fb-success);">
+        <div class="text-xs text-muted text-uppercase mb-2">Usuarios Activos</div>
+        <div class="text-2xl text-white font-medium mb-1">{{ active_users|default:"0" }}</div>
+        <div class="text-xs text-success"><i class="bi bi-people me-1"></i> Registrados en sistema</div>
+      </div>
+    </div>
+    <!-- Alertas -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="fb-event-card h-100" style="border-top: 3px solid var(--fb-danger); background-color: rgba(248,113,113,0.05);">
+        <div class="text-xs text-muted text-uppercase mb-2">Alertas de Fraude</div>
+        <div class="d-flex align-items-center gap-3">
+          <div class="text-2xl text-danger font-medium mb-1">{{ pending_fraud|default:"0" }}</div>
+          <i class="bi bi-bell text-danger" style="font-size: 24px; opacity: 0.5;"></i>
+        </div>
+        <div class="text-xs text-danger">Pendientes de revisión</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exposure and Alerts -->
+  <div class="row g-3 mb-4">
+    <!-- Exposure Table -->
+    <div class="col-lg-6">
+      <div class="fb-event-card p-0 overflow-hidden h-100">
+        <div class="p-3 border-bottom" style="border-color: var(--fb-border) !important;">
+          <h2 class="text-base text-white font-medium m-0"><i class="bi bi-graph-down text-danger me-1"></i> Exposure por Evento</h2>
+        </div>
+        <div class="table-responsive" style="max-height: 250px;">
+          <table class="table table-dark table-borderless m-0" style="font-size: 12px; --bs-table-bg: transparent;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--fb-border); background-color: rgba(255,255,255,0.05);">
+                <th class="text-muted font-medium py-2 px-3">Evento</th>
+                <th class="text-muted font-medium py-2">Selección</th>
+                <th class="text-muted font-medium py-2 text-end pe-3">Exposure (Riesgo)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for exp in exposure_data %}
+              <tr style="border-bottom: 1px solid var(--fb-border); background-color: {% cycle 'transparent' 'rgba(255,255,255,0.02)' %};">
+                <td class="py-2 px-3 text-white">{{ exp.event }}</td>
+                <td class="py-2 text-muted">{{ exp.selection }}</td>
+                <td class="py-2 text-danger font-medium text-end pe-3">{{ exp.exposure|floatformat:2 }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted py-4">No hay exposición activa.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Alerts -->
+    <div class="col-lg-6">
+      <div class="fb-event-card p-0 overflow-hidden h-100" style="border-top: 3px solid var(--fb-danger);">
+        <div class="p-3 border-bottom d-flex justify-content-between align-items-center" style="border-color: var(--fb-border) !important;">
+          <h2 class="text-base text-white font-medium m-0"><i class="bi bi-shield-exclamation text-danger me-1"></i> Auditoría (Recientes)</h2>
+          <a href="{% url 'dashboard:verify_audit' %}" class="btn-gold py-1 px-2 text-xs">Verificar Integridad</a>
+        </div>
+        <div class="p-3 d-flex flex-column gap-2" style="max-height: 250px; overflow-y: auto;">
+          {% for alert in recent_alerts %}
+          <div class="p-2 rounded text-xs d-flex justify-content-between align-items-center" style="background-color: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.2);">
+            <div>
+              <span class="text-danger font-medium">{{ alert.get_rule_broken_display }}</span><br>
+              <span class="text-muted">Apuesta #{{ alert.bet.id }} - User: {{ alert.bet.user.username }}</span>
+            </div>
+            <a href="{% url 'dashboard:fraud_alerts' %}" class="btn-danger-outline text-decoration-none py-1 px-2">Revisar</a>
+          </div>
+          {% empty %}
+          <div class="text-center text-success py-4"><i class="bi bi-shield-check text-2xl d-block mb-1"></i> Todo está en orden.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tablas -->
+  <div class="row g-3">
+    <!-- Apuestas Recientes -->
+    <div class="col-lg-8">
+      <div class="fb-event-card p-0 overflow-hidden h-100">
+        <div class="p-3 border-bottom" style="border-color: var(--fb-border) !important;">
+          <h2 class="text-base text-white font-medium m-0">Últimas Apuestas</h2>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-dark table-borderless m-0" style="font-size: 12px; --bs-table-bg: transparent;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--fb-border); background-color: rgba(255,255,255,0.05);">
+                <th class="text-muted font-medium py-2 px-3">Usuario</th>
+                <th class="text-muted font-medium py-2">Evento</th>
+                <th class="text-muted font-medium py-2">Cuota</th>
+                <th class="text-muted font-medium py-2">Monto</th>
+                <th class="text-muted font-medium py-2">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for bet in recent_bets %}
+              <tr style="border-bottom: 1px solid var(--fb-border); background-color: {% cycle 'transparent' 'rgba(255,255,255,0.02)' %};">
+                <td class="py-2 px-3 text-white">{{ bet.user.username }}</td>
+                <td class="py-2 text-muted text-truncate" style="max-width: 150px;">{{ bet.selection.market.event.home_team }} vs {{ bet.selection.market.event.away_team }}</td>
+                <td class="py-2 text-primary font-medium">{{ bet.odds }}</td>
+                <td class="py-2 text-white">{{ bet.stake|floatformat:2 }}</td>
+                <td class="py-2"><span class="fb-status-badge fb-status-{{ bet.status }}">{{ bet.get_status_display }}</span></td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">Sin datos.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="col-lg-4">
+      <div class="fb-event-card h-100">
+        <h2 class="text-base text-white font-medium mb-3 border-bottom pb-2" style="border-color: var(--fb-border) !important;">Eventos en Vivo (Liquidar)</h2>
+        <div class="d-flex flex-column gap-2">
+          {% for event in live_events %}
+          <a href="{% url 'dashboard:liquidate_event' event.id %}" class="btn-cashout text-decoration-none text-start d-flex justify-content-between align-items-center py-2 px-3">
+            <span class="text-xs text-truncate"><i class="bi bi-play-circle me-1"></i> {{ event.home_team }} vs {{ event.away_team }}</span>
+            <i class="bi bi-chevron-right text-muted" style="font-size: 10px;"></i>
+          </a>
+          {% empty %}
+          <div class="text-muted text-xs text-center py-3">No hay eventos en vivo.</div>
+          {% endfor %}
+          <a href="{% url 'dashboard:fraud_alerts' %}" class="btn-danger-outline text-decoration-none text-start d-flex justify-content-between align-items-center py-3 mt-2">
+            <span><i class="bi bi-shield-exclamation me-2"></i> Revisar Alertas Fraude</span>
+            <span class="badge bg-danger rounded-pill">{{ pending_alerts_count|default:"0" }}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

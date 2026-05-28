@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load betting_extras %}
+
+{% block title %}Mis Apuestas — FairBet Lab{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="text-xl text-primary font-medium">
+      <i class="bi bi-receipt"></i> Mis Apuestas
+    </h1>
+  </div>
+
+  <div class="fb-tabs">
+    <div class="fb-tab active">Todas</div>
+    <div class="fb-tab">Abiertas</div>
+    <div class="fb-tab">Resueltas</div>
+  </div>
+
+  <div class="d-flex flex-column gap-3">
+    {% for bet in bets %}
+    <div class="fb-event-card border-start border-3 {% if bet.status == 'won' %}border-success{% elif bet.status == 'lost' %}border-danger{% elif bet.status == 'accepted' %}border-info{% else %}border-secondary{% endif %}">
+      
+      <div class="d-flex justify-content-between align-items-start mb-2 border-bottom pb-2" style="border-color: var(--fb-border) !important;">
+        <div>
+          <div class="text-white font-medium mb-1">{{ bet.selection.market.event.home_team }} vs {{ bet.selection.market.event.away_team }}</div>
+          <div class="text-xs text-muted">{{ bet.selection.market.event.sport.name }} • {{ bet.selection.market.event.scheduled_at|date:"d M H:i" }}</div>
+        </div>
+        <span class="fb-status-badge fb-status-{{ bet.status }}">
+          {{ bet.get_status_display }}
+        </span>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-xs text-muted mb-1">{{ bet.selection.market.get_market_type_display }}{% if bet.selection.market.line %} ({{ bet.selection.market.line }}){% endif %}</div>
+          <div class="text-sm text-primary font-medium">Selección: {{ bet.selection.name }} @ {{ bet.odds_at_placement|odds_format }}</div>
+        </div>
+        
+        <div class="text-end">
+          <div class="text-xs text-muted mb-1">Monto apostado</div>
+          <div class="text-sm text-white">{{ bet.stake|floatformat:2 }} fichas</div>
+        </div>
+        
+        <div class="text-end" style="min-width: 100px;">
+          <div class="text-xs text-muted mb-1">Pago potencial</div>
+          <div class="text-base font-medium {% if bet.status == 'won' %}text-success{% else %}text-white{% endif %}">
+            {{ bet.potential_payout|floatformat:2 }}
+          </div>
+        </div>
+      </div>
+      
+      <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top" style="border-color: var(--fb-border) !important;">
+        <span class="text-xs text-muted">ID: {{ bet.id|truncatechars:12 }}</span>
+        <span class="text-xs text-muted">{{ bet.placed_at|date:"d/m/Y H:i" }}</span>
+      </div>
+
+    </div>
+    {% empty %}
+    <div class="p-5 text-center text-muted border border-secondary rounded" style="border-color: var(--fb-border) !important;">
+      <i class="bi bi-receipt mb-3 d-block" style="font-size: 32px; opacity: 0.3;"></i>
+      <h6 class="font-medium text-white mb-1">No tienes apuestas registradas</h6>
+      <p class="mb-0 text-sm">Visita la sección de deportes para realizar tu primera apuesta.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

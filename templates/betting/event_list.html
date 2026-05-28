@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load betting_extras %}
+
+{% block title %}Deportes — FairBet Lab{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="text-xl text-primary font-medium">
+      <i class="bi bi-circle"></i> Fútbol
+    </h1>
+  </div>
+
+  <div x-data="{ currentTab: 'all' }">
+    <div class="fb-tabs">
+      <div class="fb-tab" :class="{ 'active': currentTab === 'all' }" @click="currentTab = 'all'">Destacados</div>
+      <div class="fb-tab" :class="{ 'active': currentTab === 'live' }" @click="currentTab = 'live'">En Vivo</div>
+      <div class="fb-tab" :class="{ 'active': currentTab === 'upcoming' }" @click="currentTab = 'upcoming'">Próximos</div>
+      <div class="fb-tab" :class="{ 'active': currentTab === 'top' }" @click="currentTab = 'top'">Ligas Top</div>
+    </div>
+
+    <!-- Upcoming & Live -->
+    <div>
+      {% for event in upcoming %}
+      <div class="fb-event-card"
+           x-show="
+             currentTab === 'all' || currentTab === 'top' || 
+             (currentTab === 'live' && '{{ event.status }}' === 'en_vivo') || 
+             (currentTab === 'upcoming' && '{{ event.status }}' === 'programado')
+           "
+           x-transition>
+      <div class="fb-event-header mb-2">
+        <div class="fb-event-sub d-flex align-items-center gap-2">
+          {% if event.status == 'en_vivo' %}
+            <span class="fb-badge-live"><span class="fb-live-dot"></span> EN VIVO</span>
+          {% else %}
+            <span>{{ event.scheduled_at|date:"d M H:i" }}</span>
+          {% endif %}
+          <span class="text-muted text-xs text-uppercase ms-2"><i class="bi bi-trophy"></i> {{ event.sport.name }}</span>
+        </div>
+        <a href="{% url 'betting:event_detail' event.id %}" class="text-muted text-xs text-decoration-none">
+          +{{ event.markets.count }} mercados <i class="bi bi-chevron-right ms-1"></i>
+        </a>
+      </div>
+
+      <div class="d-flex gap-3 align-items-center justify-content-between">
+        <!-- Teams & Score -->
+        <div class="fb-event-teams flex-grow-1" style="min-width: 0;">
+          <div class="fb-team-row">
+            <span class="fb-team-name text-truncate">{{ event.home_team }}</span>
+            <span class="fb-event-score">{% if event.status == 'en_vivo' %}{{ event.result_home|default:"0" }}{% endif %}</span>
+          </div>
+          <div class="fb-team-row mt-1">
+            <span class="fb-team-name text-truncate">{{ event.away_team }}</span>
+            <span class="fb-event-score">{% if event.status == 'en_vivo' %}{{ event.result_away|default:"0" }}{% endif %}</span>
+          </div>
+        </div>
+        
+        <!-- Odds Buttons (1X2) -->
+        <div class="fb-odds-grid" style="width: 210px; flex-shrink: 0;">
+          {% for market in event.markets.all %}
+            {% if market.market_type == '1X2' %}
+              {% for sel in market.selections.all|sort_1x2 %}
+                {% include "betting/_odds_btn.html" with sel=sel market=market %}
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="p-5 text-center text-muted border border-secondary rounded" style="border-color: var(--fb-border) !important;">
+      <i class="bi bi-calendar-x mb-3 d-block" style="font-size: 32px; opacity: 0.3;"></i>
+      <h6 class="font-medium text-white mb-1">No hay eventos disponibles</h6>
+      <p class="mb-0 text-sm">Vuelve más tarde para ver nuevos partidos.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Finished Events -->
+  {% if finished %}
+  <div x-show="currentTab === 'all'">
+    <div class="mt-5 mb-3 text-sm text-muted text-uppercase font-medium tracking-wide">
+      <i class="bi bi-check2-all me-1"></i> Finalizados recientes
+    </div>
+  <div style="opacity: 0.6;">
+    {% for event in finished %}
+    <div class="fb-event-card border-0 mb-2 py-2" style="background: transparent;">
+      <div class="d-flex gap-3 align-items-center justify-content-between">
+        <div class="fb-event-sub" style="width: 60px;">{{ event.scheduled_at|date:"d M" }}<br>FT</div>
+        <div class="fb-event-teams flex-grow-1">
+          <div class="fb-team-row">
+            <span class="fb-team-name text-muted">{{ event.home_team }}</span>
+            <span class="fb-event-score text-muted">{{ event.result_home|default:"0" }}</span>
+          </div>
+          <div class="fb-team-row">
+            <span class="fb-team-name text-muted">{{ event.away_team }}</span>
+            <span class="fb-event-score text-muted">{{ event.result_away|default:"0" }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  </div>
+  {% endif %}
+  </div>
+
+</div>
+{% endblock %}

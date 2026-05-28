@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Perfil — FairBet Lab{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+  
+  <h1 class="text-xl text-white font-medium mb-4"><i class="bi bi-person-circle text-primary me-2"></i> Mi Perfil</h1>
+
+  <div class="row g-3">
+    <!-- Información de Usuario -->
+    <div class="col-12">
+      <div class="fb-event-card">
+        <h2 class="text-sm font-medium text-white mb-3 text-uppercase tracking-wide border-bottom pb-2" style="border-color: var(--fb-border) !important;">Datos Personales</h2>
+        
+        <div class="row g-3 mt-1">
+          <div class="col-sm-6">
+            <div class="text-xs text-muted mb-1">Nombre de usuario</div>
+            <div class="text-base text-white">{{ user.username }}</div>
+          </div>
+          <div class="col-sm-6">
+            <div class="text-xs text-muted mb-1">Correo electrónico</div>
+            <div class="text-base text-white">{{ user.email }}</div>
+          </div>
+          <div class="col-sm-6">
+            <div class="text-xs text-muted mb-1">DNI</div>
+            <div class="text-base text-white">{{ user.dni }}</div>
+          </div>
+          <div class="col-sm-6">
+            <div class="text-xs text-muted mb-1">Fecha de registro</div>
+            <div class="text-base text-white">{{ user.date_joined|date:"d M Y" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Límites de Juego -->
+    <div class="col-12">
+      <div class="fb-event-card" style="border-top: 3px solid var(--fb-warning);">
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom" style="border-color: var(--fb-border) !important;">
+          <h2 class="text-sm font-medium text-warning text-uppercase tracking-wide m-0"><i class="bi bi-shield-lock me-1"></i> Límites de Depósito</h2>
+          <a href="{% url 'users:update_limits' %}" class="btn-cashout text-decoration-none">Editar límites</a>
+        </div>
+        
+        <div class="p-3 mb-3 rounded text-xs" style="background-color: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); color: #cda34f;">
+          Cualquier aumento en tus límites tardará 24 horas en aplicarse (Ley 31557).
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-dark table-borderless m-0 text-sm" style="--bs-table-bg: transparent;">
+            <tbody>
+              <tr style="border-bottom: 1px solid var(--fb-border);">
+                <td class="text-muted py-2 ps-0">Límite Diario</td>
+                <td class="text-white text-end font-medium py-2 pe-0">{% if user.daily_deposit_limit %}{{ user.daily_deposit_limit }}{% else %}Sin límite{% endif %}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--fb-border);">
+                <td class="text-muted py-2 ps-0">Límite Semanal</td>
+                <td class="text-white text-end font-medium py-2 pe-0">{% if user.weekly_deposit_limit %}{{ user.weekly_deposit_limit }}{% else %}Sin límite{% endif %}</td>
+              </tr>
+              <tr>
+                <td class="text-muted py-2 ps-0">Límite Mensual</td>
+                <td class="text-white text-end font-medium py-2 pe-0">{% if user.monthly_deposit_limit %}{{ user.monthly_deposit_limit }}{% else %}Sin límite{% endif %}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Autoexclusión -->
+    <div class="col-12">
+      <div class="fb-event-card" style="border-top: 3px solid var(--fb-danger); background-color: #1a0f14;">
+        <h2 class="text-sm font-medium text-danger text-uppercase tracking-wide mb-3 border-bottom pb-2" style="border-color: rgba(248,113,113,0.2) !important;"><i class="bi bi-exclamation-octagon me-1"></i> Autoexclusión</h2>
+        
+        <p class="text-xs text-muted mb-3">
+          Si sientes que el juego está afectando tu vida, puedes suspender tu cuenta temporal o permanentemente. Esta acción es <strong>irreversible</strong> durante el periodo seleccionado.
+        </p>
+
+        <a href="{% url 'users:self_exclusion' %}" class="btn-danger-outline d-inline-block text-decoration-none text-sm w-100 text-center py-2">
+          Solicitar Autoexclusión
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
