@@ -200,21 +200,26 @@ def place_bet(request):
 @login_required
 def bet_history(request):
     """Historial de apuestas del usuario."""
-    simple_bets = list(Bet.objects.filter(
-        user=request.user,
-    ).select_related(
-        'selection__market__event',
-    ))
+    filter_type = request.GET.get('filter', 'all')
     
+    status_filter = []
+    if filter_type == 'open':
+        status_filter = [BetStatus.ACCEPTED, BetStatus.PENDING]
+    elif filter_type == 'resolved':
+        status_filter = [BetStatus.WON, BetStatus.LOST, BetStatus.VOID, BetStatus.CASHOUT]
+
+    simple_query = Bet.objects.filter(user=request.user)
+    combined_query = CombinedBet.objects.filter(user=request.user)
+
+    if status_filter:
+        simple_query = simple_query.filter(status__in=status_filter)
+        combined_query = combined_query.filter(status__in=status_filter)
+
+    simple_bets = list(simple_query.select_related('selection__market__event'))
     for b in simple_bets:
         b.is_combined = False
 
-    combined_bets = list(CombinedBet.objects.filter(
-        user=request.user,
-    ).prefetch_related(
-        'selections__market__event',
-    ))
-
+    combined_bets = list(combined_query.prefetch_related('selections__market__event'))
     for cb in combined_bets:
         cb.is_combined = True
 
@@ -226,6 +231,7 @@ def bet_history(request):
     return render(request, 'betting/bet_history.html', {
         'bets': all_bets,
         'balance': balance,
+        'current_filter': filter_type,
     })
 
 
@@ -251,7 +257,23 @@ def bet_search(request):
             'placed_at': bet.placed_at.strftime('%d/%m/%Y %H:%M'),
         })
     except Bet.DoesNotExist:
-        return JsonResponse({'found': False, 'error': f'No se encontró la apuesta con ID "{q}".'})
+        try:
+            cbet = CombinedBet.objects.prefetch_related(
+                'selections__market__event', 'user'
+            ).get(bet_id=q, user=request.user)
+            return JsonResponse({
+                'found': True,
+                'bet_id': cbet.bet_id,
+                'event': f'Combinada ({cbet.selections.count()} selecciones)',
+                'odds': str(cbet.combined_odds),
+                'stake': str(cbet.stake),
+                'payout': str(cbet.potential_payout),
+                'status': cbet.status,
+                'status_display': cbet.get_status_display(),
+                'placed_at': cbet.placed_at.strftime('%d/%m/%Y %H:%M'),
+            })
+        except CombinedBet.DoesNotExist:
+            return JsonResponse({'found': False, 'error': f'No se encontró la apuesta con ID "{q}".'})
 
 
 @login_required

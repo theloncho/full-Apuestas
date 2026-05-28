@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Alertas de Fraude — FairBet Lab{% endblock %}
+{% block title %}Alertas de Fraude — TATANBET{% endblock %}
 
 {% block content %}
 <div style="max-width: 900px; margin: 0 auto;">
@@ -30,11 +30,11 @@
           {% for alert in alerts %}
           <tr style="border-bottom: 1px solid var(--fb-border); background-color: {% cycle 'transparent' 'rgba(255,255,255,0.02)' %};">
             <td class="py-2 px-3 text-muted">{{ alert.created_at|date:"d/m/Y H:i" }}</td>
-            <td class="py-2 text-danger font-medium">{{ alert.get_rule_broken_display }}</td>
-            <td class="py-2 text-white">{{ alert.bet.user.username }}</td>
-            <td class="py-2 text-muted">{{ alert.bet.stake|floatformat:2 }} fichas</td>
+            <td class="py-2 text-danger font-medium">{{ alert.get_activity_type_display }}</td>
+            <td class="py-2 text-white">{{ alert.user.username }}</td>
+            <td class="py-2 text-muted text-truncate" style="max-width: 250px;" title="{{ alert.reason }}">{{ alert.reason }}</td>
             <td class="py-2 text-center">
-              <a href="{% url 'audit:verify_bet' alert.bet.id %}" class="btn-danger-outline d-inline-block text-decoration-none py-1 px-3 text-xs">
+              <a href="{% url 'dashboard:fraud_alert_detail' alert.id %}" class="btn-danger-outline d-inline-block text-decoration-none py-1 px-3 text-xs">
                 Revisar Manualmente
               </a>
             </td>

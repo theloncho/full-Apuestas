@@ -53,7 +53,7 @@ def _create_alert(user, activity_type, severity, reason, metadata=None, ip_addre
     # Block automatically if severity is HIGH or CRITICAL
     if severity in [AlertSeverity.HIGH, AlertSeverity.CRITICAL] and user:
         from apps.users.models import AccountStatus
-        user.account_status = AccountStatus.SUSPENDED
+        user.account_status = AccountStatus.BLOCKED
         user.is_active = False
         user.save(update_fields=['account_status', 'is_active'])
         
@@ -127,7 +127,7 @@ def check_identical_bet_pattern(bet):
         stake=bet.stake,
         odds_at_placement=bet.odds_at_placement,
         placed_at__gte=window_start,
-        status__in=[BetStatus.ACCEPTED, BetStatus.PENDING, BetStatus.OPEN, BetStatus.IN_PLAY]
+        status__in=[BetStatus.ACCEPTED, BetStatus.PENDING]
     ).select_related('user')
     
     user_ids = set(identical_bets.values_list('user_id', flat=True))
@@ -160,7 +160,7 @@ def check_opposite_bets_hedging(user, event_id):
     bets_on_event = Bet.objects.filter(
         user=user,
         selection__market__event_id=event_id,
-        status__in=[BetStatus.ACCEPTED, BetStatus.PENDING, BetStatus.OPEN, BetStatus.IN_PLAY]
+        status__in=[BetStatus.ACCEPTED, BetStatus.PENDING]
     ).select_related('selection', 'selection__market')
 
     market_selections = {}
@@ -175,11 +175,12 @@ def check_opposite_bets_hedging(user, event_id):
         sels = data['selections']
         
         is_hedging = False
-        if m_type == '1x2' and len(sels) >= 2:
+        m_type_lower = m_type.lower()
+        if m_type_lower == '1x2' and len(sels) >= 2:
             is_hedging = True
-        elif m_type == 'over_under' and len(sels) >= 2:
+        elif m_type_lower == 'over_under' and len(sels) >= 2:
             is_hedging = True
-        elif m_type == 'btts' and len(sels) >= 2:
+        elif m_type_lower == 'btts' and len(sels) >= 2:
             is_hedging = True
             
         if is_hedging:

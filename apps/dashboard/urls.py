@@ -9,4 +9,5 @@ urlpatterns = [
     path('audit/verify/', views.verify_audit_chain, name='verify_audit'),
     path('liquidate/<int:event_id>/', views.liquidate_event_view, name='liquidate_event'),
     path('fraud/', views.fraud_alerts_view, name='fraud_alerts'),
+    path('fraud/<int:alert_id>/', views.fraud_alert_detail_view, name='fraud_alert_detail'),
 ]

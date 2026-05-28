@@ -1,6 +1,6 @@
 {% load betting_extras l10n %}
 {% if user.is_authenticated and not market.is_suspended %}
-<div class="fb-odds-wrap">
+<div class="fb-odds-wrap" :class="{ 'opacity-50' : $store.betslip.isMarketBlocked({{ event.id }}, '{{ market.get_market_type_display|escapejs }}', {{ sel.id }}) }">
   <button type="button" class="fb-odds-btn" title="Apostar a {{ sel.name }}"
           x-data="{ oddsFlash: false }"
           :class="{ 'selected': $store.betslip.selectionId === {{ sel.id }}, 'flash-up': oddsFlash }"

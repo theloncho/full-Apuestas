@@ -415,10 +415,6 @@ def _find_new_odds(
             if mapped == selection.name:
                 return odds_value
 
-    elif market.market_type == 'btts':
-        # Para simplificar la simulación, mantenemos la cuota o recalculamos ligeramente
-        return selection.odds
-
     return None
 
 
@@ -481,27 +477,3 @@ def _create_markets_from_api(
                     defaults={'odds': odds_value},
                 )
 
-    # ─── Mercado BTTS (Ambos Anotan - Simulado) ───────────────────────
-    if totals_odds:
-        from decimal import ROUND_HALF_UP
-        btts_market, _ = Market.objects.get_or_create(
-            event=event,
-            market_type=MarketType.BTTS,
-        )
-        over_price = Decimal('1.85')
-        for outcome_name, odds_value in totals_odds.items():
-            if 'over' in outcome_name.lower():
-                over_price = odds_value
-                break
-        
-        btts_yes = max(Decimal('1.10'), over_price * Decimal('0.95'))
-        btts_no = max(Decimal('1.10'), Decimal('4.0') - btts_yes)
-
-        Selection.objects.update_or_create(
-            market=btts_market, name='Sí',
-            defaults={'odds': btts_yes.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)},
-        )
-        Selection.objects.update_or_create(
-            market=btts_market, name='No',
-            defaults={'odds': btts_no.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)},
-        )

@@ -41,7 +41,7 @@ def dashboard(request):
     active_bets = Bet.objects.filter(status=BetStatus.ACCEPTED).count()
     total_bets = Bet.objects.count()
     active_users = User.objects.filter(account_status='verificado').count()
-    pending_fraud = SuspiciousActivity.objects.filter(reviewed=False).count()
+    pending_fraud = SuspiciousActivity.objects.filter(status='pending').count()
 
     # Eventos en vivo con exposición
     live_events = Event.objects.filter(status=EventStatus.LIVE)
@@ -63,7 +63,7 @@ def dashboard(request):
                 })
 
     # Últimas alertas
-    recent_alerts = SuspiciousActivity.objects.filter(reviewed=False)[:10]
+    recent_alerts = SuspiciousActivity.objects.filter(status='pending')[:10]
 
     # Últimas apuestas
     recent_bets = Bet.objects.select_related('user', 'selection__market__event').order_by('-placed_at')[:15]
@@ -194,7 +194,30 @@ def fraud_alerts_view(request):
     """Lista de alertas de fraude."""
     alerts = SuspiciousActivity.objects.all()
     if request.GET.get('pending'):
-        alerts = alerts.filter(reviewed=False)
+        alerts = alerts.filter(status='pending')
     return render(request, 'dashboard/fraud_alerts.html', {
         'alerts': alerts,
+    })
+
+@staff_member_required
+def fraud_alert_detail_view(request, alert_id):
+    """Detalle y gestión de una alerta de fraude."""
+    from django.shortcuts import get_object_or_404, redirect
+    from django.contrib import messages
+    from django.utils import timezone
+    
+    alert = get_object_or_404(SuspiciousActivity, id=alert_id)
+    
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        if new_status in ['reviewed', 'dismissed', 'confirmed', 'pending']:
+            alert.status = new_status
+            alert.reviewed_by = request.user
+            alert.reviewed_at = timezone.now()
+            alert.save()
+            messages.success(request, f"Estado de alerta actualizado a '{alert.get_status_display()}'.")
+            return redirect('dashboard:fraud_alerts')
+            
+    return render(request, 'dashboard/fraud_alert_detail.html', {
+        'alert': alert,
     })

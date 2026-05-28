@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load betting_extras %}
 
-{% block title %}Mis Apuestas — FairBet Lab{% endblock %}
+{% block title %}Mis Apuestas — TATANBET{% endblock %}
 
 {% block content %}
 <div style="max-width: 800px; margin: 0 auto;">
@@ -28,7 +28,7 @@
     <div x-show="searchResult && searchResult.found" x-cloak class="bs-search-result">
       <div class="bs-search-result-header">
         <span class="bs-search-result-id" x-text="searchResult.bet_id"></span>
-        <span class="fb-status-badge" :class="'fb-status-' + searchResult.status">{{ bet.get_status_display }}</span>
+        <span class="fb-status-badge" :class="'fb-status-' + searchResult.status" x-text="searchResult.status_display"></span>
       </div>
       <div class="bs-search-result-body">
         <span x-text="searchResult.event"></span>
@@ -42,10 +42,10 @@
     <div x-show="searchError" x-cloak class="bs-search-error" x-text="searchError"></div>
   </div>
 
-  <div class="fb-tabs">
-    <div class="fb-tab active">Todas</div>
-    <div class="fb-tab">Abiertas</div>
-    <div class="fb-tab">Resueltas</div>
+  <div class="fb-tabs mb-4">
+    <a href="?filter=all" class="fb-tab text-decoration-none {% if current_filter == 'all' %}active{% endif %}">Todas</a>
+    <a href="?filter=open" class="fb-tab text-decoration-none {% if current_filter == 'open' %}active{% endif %}">Abiertas</a>
+    <a href="?filter=resolved" class="fb-tab text-decoration-none {% if current_filter == 'resolved' %}active{% endif %}">Resueltas</a>
   </div>
 
   <div class="d-flex flex-column gap-3">

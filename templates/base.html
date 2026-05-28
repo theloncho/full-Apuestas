@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}FairBet Lab{% endblock %}</title>
+  <title>{% block title %}TITANBET{% endblock %}</title>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -19,8 +19,8 @@
 
   <!-- TOPBAR -->
   <header class="fb-topbar">
-    <a href="{% url 'betting:event_list' %}" class="fb-logo">
-      <i class="bi bi-dribbble"></i> FairBet Lab
+    <a href="{% url 'betting:event_list' %}" class="fb-logo d-flex align-items-center gap-2 text-decoration-none">
+      <img src="{% static 'img/logo.png' %}" alt="TITANBET Logo" style="height: 120px; width: auto;">
     </a>
     
     <div class="d-none d-md-flex align-items-center gap-4">
@@ -82,14 +82,8 @@
     <!-- SIDEBAR -->
     <aside class="fb-sidebar d-none d-md-block" x-data="{ sportsOpen: true, topOpen: true }">
       <!-- Logo / Brand -->
-      <div class="fb-sidebar-brand">
-        <div class="fb-sidebar-logo">
-          <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-            <rect width="40" height="40" rx="10" fill="#F5C518"/>
-            <text x="20" y="27" text-anchor="middle" fill="#0B0F17" font-size="20" font-weight="800" font-family="system-ui">FL</text>
-          </svg>
-          <span class="fb-sidebar-brand-text">FairBet<span>Lab</span></span>
-        </div>
+      <div class="fb-sidebar-brand" style="justify-content: center;">
+        <span class="fb-sidebar-brand-text" style="font-size: 1.5rem; letter-spacing: -0.5px; margin: 0;">TITANBET</span>
       </div>
 
       <!-- Main Navigation -->
@@ -609,20 +603,26 @@
             </button>
           </div>
 
-          <!-- Selections List -->
-          <template x-for="(sel, idx) in $store.betslip.combinedSelections" :key="sel.id">
-            <div class="bs-combined-sel">
-              <div class="bs-combined-sel-top">
-                <span class="bs-combined-sel-event" x-text="sel.eventName"></span>
-                <button class="bs-combined-sel-remove" @click="$store.betslip.removeFromCombined(idx)">
-                  <i class="bi bi-x"></i>
-                </button>
+          <!-- Selections List Grouped by Event -->
+          <template x-for="group in $store.betslip.groupedSelections" :key="group.eventId">
+            <div class="bs-combined-event-group mb-2 p-2 rounded" style="background: rgba(255,255,255,0.03); border: 1px solid var(--fb-border);">
+              <div class="bs-combined-sel-top mb-1" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+                <span class="bs-combined-sel-event text-white" style="font-weight: 500; font-size: 13px;" x-text="group.eventName"></span>
               </div>
-              <div class="bs-combined-sel-market" x-text="sel.marketName"></div>
-              <div class="bs-combined-sel-bottom">
-                <span class="bs-combined-sel-name" x-text="sel.name"></span>
-                <span class="bs-combined-sel-odds" x-text="sel.odds"></span>
-              </div>
+              <template x-for="sel in group.selections" :key="sel.id">
+                <div class="bs-combined-sel mt-2" style="background: none; border: none; padding: 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="bs-combined-sel-market" style="font-size: 11px; color: var(--fb-text-muted);" x-text="sel.marketName"></div>
+                    <button class="bs-combined-sel-remove" style="padding: 2px 4px; background: transparent; border: none; color: var(--fb-text-muted); cursor: pointer;" @click="$store.betslip.removeSelectionById(sel.id)">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </div>
+                  <div class="bs-combined-sel-bottom mt-1">
+                    <span class="bs-combined-sel-name text-white" style="font-size: 13px;" x-text="sel.name"></span>
+                    <span class="bs-combined-sel-odds font-bold" style="color: var(--fb-gold); font-size: 13px;" x-text="sel.odds"></span>
+                  </div>
+                </div>
+              </template>
             </div>
           </template>
 
@@ -985,6 +985,21 @@
             && !this.combinedProcessing;
         },
 
+        get groupedSelections() {
+          const groups = {};
+          this.combinedSelections.forEach(s => {
+            if (!groups[s.eventId]) {
+              groups[s.eventId] = {
+                eventId: s.eventId,
+                eventName: s.eventName,
+                selections: []
+              };
+            }
+            groups[s.eventId].selections.push(s);
+          });
+          return Object.values(groups);
+        },
+
         /* ─── Simple Bet Methods ─── */
         selectSelection(selId, odds, selName, evtId, evtName, mktName, selType, evtStatus, mktSuspended, userBalance) {
           this.selectionId = selId;
@@ -1030,12 +1045,12 @@
         addToCombined(selId, odds, selName, evtId, evtName, mktName, selType, evtStatus, mktSuspended) {
           // Check si ya existe
           if (this.combinedSelections.some(s => s.id === selId)) return;
-          // Check contingencias relacionadas (selecciones del mismo evento)
-          const sameEvent = this.combinedSelections.filter(
-            s => s.eventId === evtId
+          // Check contingencias relacionadas (selecciones del MISMO mercado en el mismo evento)
+          const sameMarket = this.combinedSelections.filter(
+            s => s.eventId === evtId && s.marketName === mktName
           );
-          if (sameEvent.length > 0) {
-            this.showToastMessage('No puedes combinar selecciones del mismo partido', 'error');
+          if (sameMarket.length > 0) {
+            this.showToastMessage('No puedes combinar múltiples selecciones del mismo mercado', 'error');
             return;
           }
           this.combinedSelections.push({
@@ -1051,6 +1066,20 @@
           });
           this.serverCombinedOdds = null;
           this.isOpen = true;
+        },
+        
+        isMarketBlocked(evtId, mktName, selId) {
+          // Verifica si ya hay una selección de este MISMO mercado y evento, y NO es esta misma selección
+          return this.combinedSelections.some(
+            s => s.eventId === evtId && s.marketName === mktName && s.id !== selId
+          );
+        },
+
+        removeSelectionById(id) {
+          const index = this.combinedSelections.findIndex(s => s.id === id);
+          if (index !== -1) {
+            this.removeFromCombined(index);
+          }
         },
 
         removeFromCombined(index) {

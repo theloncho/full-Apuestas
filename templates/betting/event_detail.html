@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load betting_extras %}
 
-{% block title %}{{ event }} — FairBet Lab{% endblock %}
+{% block title %}{{ event }} — TATANBET{% endblock %}
 
 {% block content %}
 <div style="max-width: 900px; margin: 0 auto;">
@@ -39,40 +39,65 @@
   </div>
 
   <!-- Mercados -->
-  <h2 class="text-base text-white font-medium mb-3 border-bottom pb-2" style="border-color: var(--fb-border) !important;">Todos los Mercados</h2>
-
-  <div class="d-flex flex-column gap-3">
-    {% for market in event.markets.all %}
-    <div class="fb-event-card">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <span class="text-sm font-medium text-white text-uppercase tracking-wide">
-          {{ market.get_market_type_display }}{% if market.line %} ({{ market.line }}){% endif %}
-        </span>
-        {% if market.is_suspended %}
-        <span class="fb-badge-live" style="background-color: var(--fb-warning); color: #000; border: none;">Suspendido</span>
-        {% endif %}
-      </div>
+  <div x-data="{
+    tab: 'Todos',
+    hasPrincipal: false,
+    hasGoles: false
+  }" x-init="
+    $nextTick(() => {
+        hasPrincipal = document.querySelectorAll('.market-principal').length > 0;
+        hasGoles = document.querySelectorAll('.market-goles').length > 0;
+    })
+  ">
+    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2" style="border-color: var(--fb-border) !important;">
+      <h2 class="text-base text-white font-medium m-0">Mercados</h2>
       
-      <div class="fb-odds-grid">
-        {% with selections=market.selections.all %}
-          {% if market.market_type == '1X2' %}
-            {% for sel in selections|sort_1x2 %}
-              {% include "betting/_odds_btn.html" with sel=sel market=market %}
-            {% endfor %}
-          {% else %}
-            {% for sel in selections %}
-              {% include "betting/_odds_btn.html" with sel=sel market=market %}
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+      <!-- Dynamic Tabs -->
+      <div class="fb-tabs" style="margin: 0; padding: 2px;" x-show="hasPrincipal || hasGoles" x-cloak>
+        <div class="fb-tab" :class="{ 'active': tab === 'Todos' }" @click="tab = 'Todos'">Todos</div>
+        <div class="fb-tab" :class="{ 'active': tab === 'Principal' }" @click="tab = 'Principal'" x-show="hasPrincipal">Principal</div>
+        <div class="fb-tab" :class="{ 'active': tab === 'Goles' }" @click="tab = 'Goles'" x-show="hasGoles">Goles</div>
       </div>
     </div>
-    {% empty %}
-    <div class="p-5 text-center text-muted border border-secondary rounded" style="border-color: var(--fb-border) !important;">
-      <i class="bi bi-inbox mb-3 d-block text-2xl" style="opacity: 0.3;"></i>
-      Mercados no disponibles
+
+    <div class="d-flex flex-column gap-3">
+      {% for market in event.markets.all %}
+      <div class="fb-event-card market-card 
+        {% if market.market_type == '1X2' or market.market_type == 'handicap_asiatico' %}market-principal{% endif %}
+        {% if market.market_type == 'over_under' or market.market_type == 'btts' %}market-goles{% endif %}
+        "
+        x-show="tab === 'Todos' || (tab === 'Principal' && $el.classList.contains('market-principal')) || (tab === 'Goles' && $el.classList.contains('market-goles'))"
+      >
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span class="text-sm font-medium text-white text-uppercase tracking-wide">
+            {{ market.get_market_type_display }}{% if market.line %} ({{ market.line }}){% endif %}
+          </span>
+          {% if market.is_suspended %}
+          <span class="fb-badge-live" style="background-color: var(--fb-warning); color: #000; border: none;">Suspendido</span>
+          {% endif %}
+        </div>
+        
+        <div class="fb-odds-grid">
+          {% with selections=market.selections.all %}
+            {% if market.market_type == '1X2' %}
+              {% for sel in selections|sort_1x2 %}
+                {% include "betting/_odds_btn.html" with sel=sel market=market %}
+              {% endfor %}
+            {% else %}
+              {% for sel in selections %}
+                {% include "betting/_odds_btn.html" with sel=sel market=market %}
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+      {% empty %}
+      <div class="p-5 text-center text-muted border border-secondary rounded" style="border-color: var(--fb-border) !important;">
+        <i class="bi bi-inbox mb-3 d-block text-2xl" style="opacity: 0.3;"></i>
+        No hay mercados disponibles para este partido.
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </div>
 
 </div>
