@@ -40,12 +40,12 @@ def validate_bet_placement(user, selection, stake: Decimal, market):
 
 
 def validate_combined_bet_selections(selections):
-    """Detectar selecciones mutuamente excluyentes del mismo mercado."""
-    market_ids = [sel.market_id for sel in selections]
-    if len(market_ids) != len(set(market_ids)):
+    """Detectar selecciones mutuamente excluyentes del mismo evento (contingencias relacionadas)."""
+    event_ids = [sel.market.event_id for sel in selections]
+    if len(event_ids) != len(set(event_ids)):
         raise ValueError(
-            "No puedes combinar selecciones del mismo mercado "
-            "(son mutuamente excluyentes)."
+            "No puedes combinar múltiples selecciones del mismo evento "
+            "(restricción de contingencias relacionadas)."
         )
 
 

@@ -366,7 +366,13 @@ class CombinedBet(models.Model):
         """Cash-out para combinada = stake × odds_combinada / odds_actual_producto × factor_casa."""
         current_product = Decimal('1')
         for sel in self.selections.all():
-            current_product *= sel.odds
+            if sel.is_winner is False:
+                return Decimal('0')  # Una pata falló, la apuesta está perdida
+            elif sel.is_winner is True:
+                pass  # Probabilidad 100%, multiplicador 1.0
+            else:
+                current_product *= sel.odds
+                
         if current_product <= Decimal('0'):
             return Decimal('0')
         HOUSE_FACTOR = Decimal('0.95')

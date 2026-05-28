@@ -173,8 +173,9 @@ def fetch_and_sync_odds(self):
                 # Crear mercados con cuotas de la API
                 h2h_odds = OddsAPIClient.extract_best_odds(api_event, 'h2h')
                 totals_odds = OddsAPIClient.extract_best_odds(api_event, 'totals')
+                spreads_odds = OddsAPIClient.extract_best_odds(api_event, 'spreads')
 
-                _create_markets_from_api(our_event, h2h_odds, totals_odds, home, away)
+                _create_markets_from_api(our_event, h2h_odds, totals_odds, spreads_odds, home, away)
 
                 event_index[match_key] = our_event
                 logger.info('event_imported', extra={
@@ -185,12 +186,13 @@ def fetch_and_sync_odds(self):
         # Extraer las mejores odds (promedio de casas)
         h2h_odds = OddsAPIClient.extract_best_odds(api_event, 'h2h')
         totals_odds = OddsAPIClient.extract_best_odds(api_event, 'totals')
+        spreads_odds = OddsAPIClient.extract_best_odds(api_event, 'spreads')
 
         with transaction.atomic():
             for market in our_event.markets.all():
                 for selection in market.selections.all():
                     new_odds = _find_new_odds(
-                        selection, market, h2h_odds, totals_odds,
+                        selection, market, h2h_odds, totals_odds, spreads_odds,
                         home, away,
                     )
                     if new_odds and new_odds != selection.odds:
@@ -379,7 +381,7 @@ def _normalize_match_key(home: str, away: str) -> str:
 
 
 def _find_new_odds(
-    selection, market, h2h_odds: dict, totals_odds: dict,
+    selection, market, h2h_odds: dict, totals_odds: dict, spreads_odds: dict,
     api_home: str, api_away: str,
 ) -> Decimal | None:
     """
@@ -405,11 +407,23 @@ def _find_new_odds(
             if mapped and mapped.lower().startswith(selection.name.lower()[:4]):
                 return odds_value
 
+    elif market.market_type == 'handicap_asiatico':
+        for outcome_name, odds_value in spreads_odds.items():
+            mapped = OddsAPIClient.map_outcome_to_selection(
+                outcome_name, api_home, api_away,
+            )
+            if mapped == selection.name:
+                return odds_value
+
+    elif market.market_type == 'btts':
+        # Para simplificar la simulación, mantenemos la cuota o recalculamos ligeramente
+        return selection.odds
+
     return None
 
 
 def _create_markets_from_api(
-    event, h2h_odds: dict, totals_odds: dict,
+    event, h2h_odds: dict, totals_odds: dict, spreads_odds: dict,
     api_home: str, api_away: str,
 ):
     """
@@ -452,3 +466,42 @@ def _create_markets_from_api(
                 market=ou_market, name=sel_name,
                 defaults={'odds': odds_value},
             )
+
+    # ─── Mercado Handicap Asiático ────────────────────────────────────
+    if spreads_odds:
+        ah_market, _ = Market.objects.get_or_create(
+            event=event,
+            market_type=MarketType.ASIAN_HANDICAP,
+        )
+        for outcome_name, odds_value in spreads_odds.items():
+            mapped = OddsAPIClient.map_outcome_to_selection(outcome_name, api_home, api_away)
+            if mapped:
+                Selection.objects.update_or_create(
+                    market=ah_market, name=mapped,
+                    defaults={'odds': odds_value},
+                )
+
+    # ─── Mercado BTTS (Ambos Anotan - Simulado) ───────────────────────
+    if totals_odds:
+        from decimal import ROUND_HALF_UP
+        btts_market, _ = Market.objects.get_or_create(
+            event=event,
+            market_type=MarketType.BTTS,
+        )
+        over_price = Decimal('1.85')
+        for outcome_name, odds_value in totals_odds.items():
+            if 'over' in outcome_name.lower():
+                over_price = odds_value
+                break
+        
+        btts_yes = max(Decimal('1.10'), over_price * Decimal('0.95'))
+        btts_no = max(Decimal('1.10'), Decimal('4.0') - btts_yes)
+
+        Selection.objects.update_or_create(
+            market=btts_market, name='Sí',
+            defaults={'odds': btts_yes.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)},
+        )
+        Selection.objects.update_or_create(
+            market=btts_market, name='No',
+            defaults={'odds': btts_no.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)},
+        )

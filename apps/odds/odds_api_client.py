@@ -79,7 +79,7 @@ class OddsAPIClient:
         url = f'{self.base_url}/sports/{sport}/odds/'
         params = {
             'regions': regions or getattr(settings, 'ODDS_API_REGIONS', 'eu'),
-            'markets': markets or getattr(settings, 'ODDS_API_MARKETS', 'h2h,totals'),
+            'markets': markets or getattr(settings, 'ODDS_API_MARKETS', 'h2h,totals,spreads'),
             'oddsFormat': 'decimal',
             'dateFormat': 'iso',
         }
@@ -180,6 +180,11 @@ class OddsAPIClient:
                     continue
                 for outcome in market.get('outcomes', []):
                     name = outcome.get('name', '')
+                    point = outcome.get('point')
+                    if point is not None:
+                        point_str = f"+{point}" if float(point) > 0 else str(point)
+                        name = f"{name} {point_str}"
+                        
                     try:
                         price = Decimal(str(outcome['price']))
                     except (KeyError, ValueError, TypeError):
@@ -219,4 +224,10 @@ class OddsAPIClient:
             return f'Over {name_lower.split("over")[-1].strip()}'
         elif 'under' in name_lower:
             return f'Under {name_lower.split("under")[-1].strip()}'
+        elif ' ' in name_lower and ('+' in name_lower or '-' in name_lower):
+            # Posible handicap asiático: "Gent +1.5"
+            team_part = outcome_name.rsplit(' ', 1)[0]
+            point_part = outcome_name.rsplit(' ', 1)[1]
+            mapped_team = '1' if team_part.lower().strip() == home_lower else '2' if team_part.lower().strip() == away_lower else team_part
+            return f"{mapped_team} {point_part}"
         return None

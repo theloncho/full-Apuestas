@@ -414,14 +414,14 @@
               </div>
               <!-- Search Result -->
               <div x-show="codeResult && codeResult.found" x-cloak class="bs-coupon-result">
-                <div class="bs-coupon-result-top">
-                  <span class="bs-coupon-result-id" x-text="codeResult.bet_id"></span>
-                  <span class="bs-coupon-result-status" x-text="codeResult.status_display"></span>
+                <div class="bs-coupon-result-header">
+                  <span class="bs-coupon-result-id" x-text="codeResult?.bet_id"></span>
+                  <span class="bs-coupon-result-status" x-text="codeResult?.status_display"></span>
                 </div>
-                <div class="bs-coupon-result-event" x-text="codeResult.event"></div>
-                <div class="bs-coupon-result-footer">
-                  <span>Stake: <strong x-text="codeResult.stake"></strong></span>
-                  <span>Pago: <strong x-text="codeResult.payout"></strong></span>
+                <div class="bs-coupon-result-event" x-text="codeResult?.event"></div>
+                <div class="bs-coupon-result-finances">
+                  <span>Stake: <strong x-text="codeResult?.stake"></strong></span>
+                  <span>Pago: <strong x-text="codeResult?.payout"></strong></span>
                 </div>
               </div>
               <div x-show="codeError" x-cloak class="bs-coupon-error" x-text="codeError"></div>
@@ -842,7 +842,7 @@
         requiresReconfirmation: false,
         isSuspended: false,
         isFinished: false,
-        balance: 0,
+        balance: parseFloat('{{ balance|default:"0" }}'.replace(',', '.')) || 0,
         isProcessing: false,
         errorMessage: '',
         showToast: false,
@@ -868,6 +868,7 @@
         combinedRequiresReconfirmation: false,
         combinedPreviousOdds: null,
         combinedProcessing: false,
+        serverCombinedOdds: null,
 
         /* ─── Simple Bet Computed ─── */
         get hasSelection() {
@@ -942,6 +943,7 @@
         },
 
         get combinedOdds() {
+          if (this.serverCombinedOdds !== null) return this.serverCombinedOdds;
           if (this.combinedSelections.length === 0) return '0.00';
           let product = 1;
           for (const s of this.combinedSelections) {
@@ -1028,12 +1030,12 @@
         addToCombined(selId, odds, selName, evtId, evtName, mktName, selType, evtStatus, mktSuspended) {
           // Check si ya existe
           if (this.combinedSelections.some(s => s.id === selId)) return;
-          // Check mercado duplicado (selecciones del mismo evento + mercado = mutuamente excluyentes)
-          const sameMarket = this.combinedSelections.filter(
-            s => s.eventId === evtId && s.marketName === mktName
+          // Check contingencias relacionadas (selecciones del mismo evento)
+          const sameEvent = this.combinedSelections.filter(
+            s => s.eventId === evtId
           );
-          if (sameMarket.length > 0) {
-            this.showToastMessage('No puedes combinar selecciones del mismo mercado', 'error');
+          if (sameEvent.length > 0) {
+            this.showToastMessage('No puedes combinar selecciones del mismo partido', 'error');
             return;
           }
           this.combinedSelections.push({
@@ -1047,11 +1049,13 @@
             eventStatus: evtStatus,
             suspended: mktSuspended,
           });
+          this.serverCombinedOdds = null;
           this.isOpen = true;
         },
 
         removeFromCombined(index) {
           this.combinedSelections.splice(index, 1);
+          this.serverCombinedOdds = null;
         },
 
         clearCombined() {
@@ -1060,6 +1064,7 @@
           this.combinedError = '';
           this.combinedRequiresReconfirmation = false;
           this.combinedPreviousOdds = null;
+          this.serverCombinedOdds = null;
         },
 
         setCombinedStake(value) {
@@ -1109,8 +1114,9 @@
               this.showToastMessage('Combinada confirmada \u2713', 'success');
             } else if (data.recotizacion) {
               this.combinedPreviousOdds = this.combinedOdds;
+              this.serverCombinedOdds = data.new_odds;
               this.combinedRequiresReconfirmation = true;
-              this.combinedError = data.error || 'La cuota combinada cambi\u00f3. Confirma la nueva cuota.';
+              this.combinedError = data.error || 'La cuota combinada cambió. Confirma la nueva cuota.';
             } else {
               this.combinedError = data.error || 'Error al colocar la combinada.';
             }

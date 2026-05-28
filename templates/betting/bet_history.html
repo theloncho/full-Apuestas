@@ -63,13 +63,36 @@
         </span>
       </div>
 
-      <!-- Event + Market -->
+      {% if bet.is_combined %}
+      <!-- Event + Market (Combined) -->
+      <div class="bs-receipt-event">
+        <div class="bs-receipt-match">Apuesta Combinada - {{ bet.selections.count }} selecciones</div>
+      </div>
+
+      <!-- Selections + Odds (Combined) -->
+      <div class="bs-receipt-selection" style="flex-direction: column; gap: 8px;">
+        {% for sel in bet.selections.all %}
+        <div style="border-bottom: 1px solid var(--fb-border); padding-bottom: 4px; display: flex; justify-content: space-between;">
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 11px; color: var(--fb-text-muted);">{{ sel.market.event.home_team }} vs {{ sel.market.event.away_team }}</span>
+            <span style="font-weight: bold; font-size: 13px;">{{ sel.name }}</span>
+          </div>
+          <span class="bs-receipt-odds">@ {{ sel.odds|odds_format }}</span>
+        </div>
+        {% endfor %}
+        <div class="bs-receipt-pick mt-1" style="justify-content: flex-end;">
+          <span style="font-size: 11px; color: var(--fb-text-muted); margin-right: 8px;">Cuota Total</span>
+          <span class="bs-receipt-odds" style="color: var(--fb-primary);">@ {{ bet.combined_odds|odds_format }}</span>
+        </div>
+      </div>
+      {% else %}
+      <!-- Event + Market (Simple) -->
       <div class="bs-receipt-event">
         <div class="bs-receipt-match">{{ bet.selection.market.event.home_team }} vs {{ bet.selection.market.event.away_team }}</div>
         <div class="bs-receipt-meta">{{ bet.selection.market.event.sport.name }} • {{ bet.selection.market.event.scheduled_at|date:"d M H:i" }}</div>
       </div>
 
-      <!-- Selection + Odds -->
+      <!-- Selection + Odds (Simple) -->
       <div class="bs-receipt-selection">
         <div class="bs-receipt-market">{{ bet.selection.market.get_market_type_display }}{% if bet.selection.market.line %} ({{ bet.selection.market.line }}){% endif %}</div>
         <div class="bs-receipt-pick">
@@ -77,6 +100,7 @@
           <span class="bs-receipt-odds">@ {{ bet.odds_at_placement|odds_format }}</span>
         </div>
       </div>
+      {% endif %}
 
       <!-- Numbers Row -->
       <div class="bs-receipt-numbers">
@@ -95,7 +119,7 @@
       <div class="bs-receipt-footer">
         <span><i class="bi bi-clock"></i> {{ bet.placed_at|date:"d/m/Y H:i" }}</span>
         {% if bet.status == 'accepted' and bet.calculated_cashout > 0 %}
-        <a href="{% url 'betting:cashout_bet' bet.id %}" class="bs-receipt-cashout" onclick="return confirm('¿Cash-out de {{ bet.calculated_cashout|floatformat:2 }} fichas?')">
+        <a href="{% if bet.is_combined %}{% url 'betting:cashout_combined_bet' bet.id %}{% else %}{% url 'betting:cashout_bet' bet.id %}{% endif %}" class="bs-receipt-cashout" onclick="return confirm('¿Cash-out de {{ bet.calculated_cashout|floatformat:2 }} fichas?')">
           <i class="bi bi-cash-coin"></i> Cash-out {{ bet.calculated_cashout|floatformat:2 }}
         </a>
         {% endif %}

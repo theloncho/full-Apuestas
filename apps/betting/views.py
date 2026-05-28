@@ -200,16 +200,31 @@ def place_bet(request):
 @login_required
 def bet_history(request):
     """Historial de apuestas del usuario."""
-    bets = Bet.objects.filter(
+    simple_bets = list(Bet.objects.filter(
         user=request.user,
     ).select_related(
         'selection__market__event',
-    ).order_by('-placed_at')
+    ))
+    
+    for b in simple_bets:
+        b.is_combined = False
+
+    combined_bets = list(CombinedBet.objects.filter(
+        user=request.user,
+    ).prefetch_related(
+        'selections__market__event',
+    ))
+
+    for cb in combined_bets:
+        cb.is_combined = True
+
+    all_bets = simple_bets + combined_bets
+    all_bets.sort(key=lambda x: x.placed_at, reverse=True)
 
     balance = WalletService.get_balance(request.user)
 
     return render(request, 'betting/bet_history.html', {
-        'bets': bets,
+        'bets': all_bets,
         'balance': balance,
     })
 

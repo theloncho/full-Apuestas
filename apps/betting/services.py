@@ -22,6 +22,7 @@ class LiquidationService:
         cls._resolve_1x2_selections(event, result_home, result_away)
         cls._resolve_over_under_selections(event, result_home, result_away)
         cls._resolve_btts_selections(event, result_home, result_away)
+        cls._resolve_asian_handicap_selections(event, result_home, result_away)
 
         # Liquidar apuestas simples aceptadas
         bets = Bet.objects.select_for_update().filter(
@@ -137,6 +138,27 @@ class LiquidationService:
                     sel.is_winner = both_scored
                 elif sel.name == 'No':
                     sel.is_winner = not both_scored
+                sel.save()
+
+    @staticmethod
+    def _resolve_asian_handicap_selections(event, result_home, result_away):
+        for market in event.markets.filter(market_type='handicap_asiatico'):
+            for sel in market.selections.all():
+                try:
+                    # sel.name is expected to be "1 +1.5" or "2 -1.5"
+                    team, point_str = sel.name.rsplit(' ', 1)
+                    point = Decimal(point_str)
+                    
+                    if team == '1':
+                        adjusted_home = Decimal(result_home) + point
+                        sel.is_winner = adjusted_home > Decimal(result_away)
+                    elif team == '2':
+                        adjusted_away = Decimal(result_away) + point
+                        sel.is_winner = Decimal(result_home) < adjusted_away
+                    else:
+                        sel.is_winner = False # Fallback si el nombre está mal formateado
+                except Exception:
+                    sel.is_winner = False
                 sel.save()
 
 
