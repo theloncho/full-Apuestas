@@ -1,0 +1,1385 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}TITANBET{% endblock %}</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+  
+  <link rel="stylesheet" href="{% static 'css/fairbet.css' %}?v={% now 'U' %}">
+  
+  {% block extra_head %}{% endblock %}
+</head>
+<body x-data="{ mobileBetslipOpen: false }" class="{% block body_class %}{% endblock %}">
+
+  <!-- TOPBAR -->
+  <header class="fb-topbar">
+    <a href="{% url 'betting:event_list' %}" class="fb-logo d-flex align-items-center gap-2 text-decoration-none">
+      <img src="{% static 'img/logo.png' %}" alt="TITANBET Logo" style="height: 120px; width: auto;">
+    </a>
+    
+    <div class="d-none d-md-flex align-items-center gap-4">
+      <a href="{% url 'betting:event_list' %}" class="text-decoration-none {% if request.resolver_match.url_name == 'event_list' %}text-primary{% else %}text-muted{% endif %} font-medium text-base">Deportes</a>
+      <a href="{% url 'betting:bet_history' %}" class="text-decoration-none {% if request.resolver_match.url_name == 'bet_history' %}text-primary{% else %}text-muted{% endif %} font-medium text-base">Mis Apuestas</a>
+      <button class="fb-topbar-btn" @click="$store.betslip.isOpen ? $store.betslip.close() : $store.betslip.isOpen = true" title="Boleto de apuesta">
+        <i class="bi bi-receipt"></i>
+        <span class="fb-topbar-badge" x-show="$store.betslip.hasSelection || $store.betslip.hasCombinedSelections" x-text="$store.betslip.hasCombinedSelections ? $store.betslip.combinedCount : '1'"></span>
+      </button>
+    </div>
+
+    <div class="d-flex align-items-center gap-3">
+      {% if user.is_authenticated %}
+        <a href="{% url 'wallet:wallet' %}" class="fb-balance-chip text-decoration-none">
+          <i class="bi bi-wallet2"></i>
+          <span>{{ balance|default:"0.00" }}</span>
+        </a>
+        <div class="dropdown">
+          <a href="#" class="text-decoration-none text-muted dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+            <i class="bi bi-person"></i>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" style="background-color: var(--fb-surface); border: 1px solid var(--fb-border); font-size: 13px;">
+            <li><a class="dropdown-item" href="{% url 'users:profile' %}">Perfil</a></li>
+            <li><a class="dropdown-item" href="{% url 'wallet:wallet' %}">Wallet</a></li>
+            <li><hr class="dropdown-divider" style="border-color: var(--fb-border);"></li>
+            {% if user.is_staff %}
+            <li><a class="dropdown-item text-warning" href="{% url 'dashboard:dashboard' %}">Dashboard Admin</a></li>
+            <li><hr class="dropdown-divider" style="border-color: var(--fb-border);"></li>
+            {% endif %}
+            <li><a class="dropdown-item text-danger" href="{% url 'users:logout' %}">Cerrar Sesión</a></li>
+          </ul>
+        </div>
+      {% else %}
+        <a href="{% url 'users:login' %}" class="text-muted text-decoration-none font-medium text-sm">Iniciar sesión</a>
+        <a href="{% url 'users:register' %}" class="btn-gold text-decoration-none py-1 px-3 text-sm">Registro</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- JUEGO RESPONSABLE BAR (OBLIGATORIA) -->
+  <div class="fb-rg-bar">
+    <i class="bi bi-shield-check me-1"></i> Apuesta con responsabilidad · Línea de ayuda: 0800-00000
+  </div>
+
+  <!-- ALERTS -->
+  {% if messages %}
+    <div class="position-absolute w-100" style="z-index: 1050;">
+      {% for message in messages %}
+      <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)" x-transition.opacity.duration.500ms class="alert alert-{{ message.tags|default:'info' }} bg-dark text-white border-bottom border-{{ message.tags|default:'info' }} rounded-0 mb-0 py-2 text-center text-sm" role="alert">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- MAIN LAYOUT GRID -->
+  <div class="fb-layout">
+    
+    <!-- SIDEBAR -->
+    <aside class="fb-sidebar d-none d-md-block" x-data="{ sportsOpen: true, topOpen: true }">
+      <!-- Logo / Brand -->
+      <div class="fb-sidebar-brand" style="justify-content: center;">
+        <span class="fb-sidebar-brand-text" style="font-size: 1.5rem; letter-spacing: -0.5px; margin: 0;">TITANBET</span>
+      </div>
+
+      <!-- Main Navigation -->
+      <div class="fb-sidebar-section">
+        <div class="fb-sidebar-section-header" @click="topOpen = !topOpen">
+          <span class="fb-sidebar-label">Navegación</span>
+          <i class="bi" :class="topOpen ? 'bi-chevron-down' : 'bi-chevron-right'" style="font-size:9px;color:#64748B;"></i>
+        </div>
+        <template x-if="topOpen">
+          <div>
+            <a href="{% url 'betting:event_list' %}" class="fb-sidebar-item active">
+              <i class="bi bi-grid-1x2-fill fb-sidebar-icon"></i>
+              <span>Inicio</span>
+            </a>
+            <a href="#" class="fb-sidebar-item">
+              <span class="fb-sidebar-icon fb-sidebar-icon-live">
+                <span class="pulse-dot"></span>
+              </span>
+              <span>En Vivo</span>
+              <span class="fb-badge-live">12</span>
+            </a>
+            <a href="{% url 'betting:bet_history' %}" class="fb-sidebar-item">
+              <i class="bi bi-ticket-perforated-fill fb-sidebar-icon"></i>
+              <span>Mis Apuestas</span>
+            </a>
+            <a href="#" class="fb-sidebar-item">
+              <i class="bi bi-star-fill fb-sidebar-icon" style="color:var(--fb-warning);"></i>
+              <span>Favoritos</span>
+            </a>
+          </div>
+        </template>
+      </div>
+
+      <!-- Sports A-Z -->
+      <div class="fb-sidebar-section">
+        <div class="fb-sidebar-section-header" @click="sportsOpen = !sportsOpen">
+          <span class="fb-sidebar-label">Deportes</span>
+          <i class="bi" :class="sportsOpen ? 'bi-chevron-down' : 'bi-chevron-right'" style="font-size:9px;color:#64748B;"></i>
+        </div>
+        <template x-if="sportsOpen">
+          <div>
+            <a href="#" class="fb-sidebar-item">
+              <span class="fb-team-shield c1" style="width:20px;height:20px;font-size:9px;margin-right:0;">⚽</span>
+              <span>Fútbol</span>
+              <span class="fb-sidebar-count">24</span>
+            </a>
+            <a href="#" class="fb-sidebar-item">
+              <span class="fb-team-shield c2" style="width:20px;height:20px;font-size:9px;margin-right:0;">🏀</span>
+              <span>Baloncesto</span>
+              <span class="fb-sidebar-count">8</span>
+            </a>
+            <a href="#" class="fb-sidebar-item">
+              <span class="fb-team-shield c5" style="width:20px;height:20px;font-size:9px;margin-right:0;">🎾</span>
+              <span>Tenis</span>
+              <span class="fb-sidebar-count">15</span>
+            </a>
+            <a href="#" class="fb-sidebar-item">
+              <span class="fb-team-shield c3" style="width:20px;height:20px;font-size:9px;margin-right:0;">⚾</span>
+              <span>Béisbol</span>
+              <span class="fb-sidebar-count">6</span>
+            </a>
+            <a href="#" class="fb-sidebar-item">
+              <span class="fb-team-shield c4" style="width:20px;height:20px;font-size:9px;margin-right:0;">🎮</span>
+              <span>eSports</span>
+              <span class="fb-sidebar-count">11</span>
+            </a>
+          </div>
+        </template>
+      </div>
+
+      <!-- Live Activity Feed -->
+      <div class="fb-sidebar-section">
+        <div class="fb-sidebar-label" style="margin-top:0;">Actividad Reciente</div>
+        <div class="fb-sidebar-activity">
+          <div class="fb-sidebar-activity-item">
+            <span class="fb-sidebar-activity-dot" style="background:#21C06B;"></span>
+            <span class="fb-sidebar-activity-text">Carlos ganó <strong>500</strong></span>
+          </div>
+          <div class="fb-sidebar-activity-item">
+            <span class="fb-sidebar-activity-dot" style="background:var(--fb-primary);"></span>
+            <span class="fb-sidebar-activity-text">María apostó a <strong>River</strong></span>
+          </div>
+          <div class="fb-sidebar-activity-item">
+            <span class="fb-sidebar-activity-dot" style="background:#2D7CFF;"></span>
+            <span class="fb-sidebar-activity-text">Juan cobró <strong>1,250</strong></span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="fb-main">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="fb-toast-container">
+      <div x-show="$store.betslip.showToast" x-cloak
+           x-transition:enter="toast-enter"
+           x-transition:enter-start="toast-enter-start"
+           x-transition:enter-end="toast-enter-end"
+           x-transition:leave="toast-leave"
+           x-transition:leave-start="toast-leave-start"
+           x-transition:leave-end="toast-leave-end"
+            class="fb-toast"
+            :class="$store.betslip.toastType === 'success' ? 'fb-toast-success' : 'fb-toast-error'">
+        <i :class="$store.betslip.toastType === 'success' ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-circle-fill'"></i>
+        <div class="fb-toast-body">
+          <span x-text="$store.betslip.toastMessage"></span>
+          <div x-show="$store.betslip.lastBetId" class="fb-toast-betid" @click="navigator.clipboard.writeText($store.betslip.lastBetId); $store.betslip.showToastMessage('ID copiado: ' + $store.betslip.lastBetId, 'success')">
+            <i class="bi bi-ticket-perforated"></i>
+            <span x-text="$store.betslip.lastBetId"></span>
+            <i class="bi bi-clipboard"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIRMATION MODAL -->
+    <div x-show="$store.betslip.showConfirmModal" x-cloak
+         class="fb-modal-overlay"
+         x-transition:enter="modal-enter"
+         x-transition:enter-start="modal-enter-start"
+         x-transition:enter-end="modal-enter-end"
+         x-transition:leave="modal-leave"
+         x-transition:leave-start="modal-leave-start"
+         x-transition:leave-end="modal-leave-end">
+      <div class="fb-modal" @click.outside="$store.betslip.showConfirmModal = false">
+        <div class="fb-modal-header">
+          <i class="bi bi-check-circle-fill" style="color:var(--fb-success);font-size:22px;"></i>
+          <h3 class="fb-modal-title">Apuesta Confirmada</h3>
+        </div>
+        <div class="fb-modal-body">
+          <p class="fb-modal-msg">Tu apuesta fue registrada correctamente.</p>
+
+          <div class="fb-modal-details">
+            <div class="fb-modal-detail-row">
+              <span class="fb-modal-detail-label">ID</span>
+              <span class="fb-modal-detail-value" style="font-family:monospace;color:var(--fb-primary);" x-text="$store.betslip.betResult.bet_id"></span>
+            </div>
+            <div class="fb-modal-detail-row">
+              <span class="fb-modal-detail-label">Tipo</span>
+              <span class="fb-modal-detail-value" x-text="$store.betslip.betResult.type"></span>
+            </div>
+            <div class="fb-modal-detail-row">
+              <span class="fb-modal-detail-label">Monto</span>
+              <span class="fb-modal-detail-value" x-text="$store.betslip.betResult.stake + ' fichas'"></span>
+            </div>
+            <div class="fb-modal-detail-row">
+              <span class="fb-modal-detail-label">Cuota</span>
+              <span class="fb-modal-detail-value" x-text="$store.betslip.betResult.odds"></span>
+            </div>
+            <div class="fb-modal-detail-row">
+              <span class="fb-modal-detail-label">Ganancia</span>
+              <span class="fb-modal-detail-value" style="color:var(--fb-success);" x-text="$store.betslip.betResult.payout + ' fichas'"></span>
+            </div>
+            <div class="fb-modal-detail-row">
+              <span class="fb-modal-detail-label">Estado</span>
+              <span class="fb-modal-detail-value"><span class="fb-status-badge fb-status-accepted">Aceptada</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="fb-modal-actions">
+          <button class="btn-gold" style="flex:1;" @click="$store.betslip.confirmKeepSelections()">
+            <i class="bi bi-check-lg"></i> Mantener selecciones
+          </button>
+          <button class="fb-modal-btn" @click="$store.betslip.confirmClearSelections()">
+            <i class="bi bi-trash3"></i> Borrar
+          </button>
+          <button class="fb-modal-btn fb-modal-btn-secondary" @click="$store.betslip.confirmViewHistory()">
+            <i class="bi bi-clock-history"></i> Ver historial
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASHOUT CONFIRM MODAL -->
+    <div x-show="$store.betslip.showCashoutModal" x-cloak
+         class="fb-modal-overlay"
+         x-transition>
+      <div class="fb-modal" @click.outside="$store.betslip.showCashoutModal = false">
+        <div class="fb-modal-header">
+          <i class="bi bi-cash-stack" style="color:var(--fb-warning);font-size:22px;"></i>
+          <h3 class="fb-modal-title">Cash-out</h3>
+        </div>
+        <div class="fb-modal-body">
+          <p class="fb-modal-msg">¿Deseas cerrar anticipadamente esta apuesta por <strong style="color:var(--fb-warning);" x-text="$store.betslip.cashoutTarget?.amount + ' fichas'"></strong>?</p>
+        </div>
+        <div class="fb-modal-actions">
+          <button class="btn-gold" style="flex:1;" @click="$store.betslip.executeCashout()">
+            <i class="bi bi-check-lg"></i> Cerrar apuesta
+          </button>
+          <button class="fb-modal-btn" @click="$store.betslip.showCashoutModal = false">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BETSLIP PANEL -->
+    <aside class="fb-betslip" x-data="{ tab: 'simple' }"
+           @switch-to-historial.window="tab = 'historial'"
+           x-show="$store.betslip.isOpen"
+           x-transition:enter-start="betslip-enter-start"
+           x-transition:enter-end="betslip-enter-end"
+           x-transition:leave="betslip-leave"
+           x-transition:leave-start="betslip-leave-start"
+           x-transition:leave-end="betslip-leave-end">
+
+      <!-- Header -->
+      <div class="fb-betslip-header">
+        <div class="fb-betslip-header-title">
+          <i class="bi bi-receipt"></i>
+          <span>Apuesta</span>
+          <span class="fb-betslip-header-count" x-text="$store.betslip.hasCombinedSelections ? $store.betslip.combinedCount : ($store.betslip.selectionName ? '1' : '0')"></span>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="fb-betslip-tabs">
+        <button class="fb-betslip-tab" :class="tab === 'simple' && 'active'" @click="tab = 'simple'">Simple</button>
+        <button class="fb-betslip-tab" :class="tab === 'combinada' && 'active'" @click="tab = 'combinada'">
+          Combinada
+          <span x-show="$store.betslip.hasCombinedSelections" x-cloak class="fb-betslip-tab-badge" x-text="$store.betslip.combinedCount"></span>
+        </button>
+        <button class="fb-betslip-tab" :class="tab === 'historial' && 'active'" @click="tab = 'historial'; $store.betslip.loadHistory()">Historial</button>
+      </div>
+
+      <!-- Body (scrollable) -->
+      <div class="fb-betslip-body">
+        <!-- Simple Tab (uses x-show to avoid nested x-if issues) -->
+        <div x-show="tab === 'simple'" x-cloak>
+
+          <!-- ═══ TICKET CARD (when selection exists) ═══ -->
+          <div x-show="$store.betslip.hasSelection" class="bs-ticket">
+
+            <!-- Event Header -->
+            <div class="bs-event-bar">
+              <div class="bs-event-status">
+                <span x-show="$store.betslip.isLive">
+                  <span class="pulse-dot"></span> EN VIVO
+                </span>
+                <span x-show="!$store.betslip.isLive && $store.betslip.eventStatus === 'programado'">
+                  <i class="bi bi-calendar3"></i> Programado
+                </span>
+                <span x-show="$store.betslip.eventStatus === 'finalizado'">
+                  <i class="bi bi-check-circle"></i> Finalizado
+                </span>
+              </div>
+              <button class="bs-remove-btn" @click="$store.betslip.clearSelection()" title="Eliminar selección">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+
+            <!-- Match Name -->
+            <div class="bs-match-name" x-text="$store.betslip.eventName"></div>
+
+            <!-- Market Name -->
+            <div class="bs-market-name" x-text="$store.betslip.marketName"></div>
+
+            <!-- Selection Card -->
+            <div class="bs-selection-card">
+              <div class="bs-selection-left">
+                <div class="bs-selection-label">Selección</div>
+                <div class="bs-selection-name" x-text="$store.betslip.selectionName"></div>
+                <div class="bs-selection-type" x-text="$store.betslip.selectionType"></div>
+              </div>
+              <div class="bs-selection-right">
+                <div class="bs-selection-label">Cuota</div>
+                <div class="bs-odds-display" x-text="$store.betslip.odds"></div>
+              </div>
+            </div>
+
+            <!-- Re-cotización alert -->
+            <div x-show="$store.betslip.requiresReconfirmation && !$store.betslip.isSuspended" x-cloak
+                 class="bs-alert bs-alert-reodds">
+              <i class="bi bi-arrow-repeat"></i>
+              <div class="bs-reodds-text">
+                La cuota cambió de <span class="bs-old-odds" x-text="$store.betslip.previousOdds"></span>
+                a <span class="bs-new-odds" x-text="$store.betslip.odds"></span>
+              </div>
+            </div>
+
+            <!-- Suspended alert -->
+            <div x-show="$store.betslip.isSuspended && !$store.betslip.isFinished" x-cloak
+                 class="bs-alert bs-alert-suspended">
+              <span class="spinner-border spinner-border-sm" role="status" style="width:10px;height:10px;border-width:1.5px;"></span>
+              Mercado suspendido — revisando...
+            </div>
+
+            <!-- Finished alert -->
+            <div x-show="$store.betslip.isFinished" x-cloak
+                 class="bs-alert bs-alert-error">
+              <i class="bi bi-x-circle"></i>
+              Evento finalizado. Apuestas cerradas.
+            </div>
+
+            <!-- Error inline -->
+            <div x-show="$store.betslip.errorMessage" x-cloak
+                 class="bs-alert bs-alert-error"
+                 x-text="$store.betslip.errorMessage">
+            </div>
+          </div>
+
+          <!-- ═══ EMPTY STATE (when no selection) — Cupón, Abiertas, code reservation ═══ -->
+          <div x-show="!$store.betslip.hasSelection" x-data="{ couponTab: 'abiertas', codeQuery: '', codeResult: null, codeError: '' }">
+
+            <!-- Search by ID -->
+            <div class="bs-coupon-search">
+              <div class="bs-coupon-search-header">
+                <i class="bi bi-search"></i>
+                <span>Buscar apuesta</span>
+              </div>
+              <div class="bs-coupon-search-row">
+                <select class="bs-coupon-search-select">
+                  <option>ID Apuesta</option>
+                </select>
+                <input type="text" class="bs-coupon-search-input" x-model="codeQuery" placeholder="Ingrese ID de la apuesta" @keyup.enter="codeQuery ? fetch('/bet/search/?q='+encodeURIComponent(codeQuery)).then(r=>r.json()).then(d=>{codeResult=d;codeError=d.error||''}).catch(()=>codeError='Error de conexi\u00f3n') : null">
+                <button class="bs-coupon-search-go" @click="codeQuery ? fetch('/bet/search/?q='+encodeURIComponent(codeQuery)).then(r=>r.json()).then(d=>{codeResult=d;codeError=d.error||''}).catch(()=>codeError='Error de conexi\u00f3n') : null">
+                  <i class="bi bi-arrow-right"></i>
+                </button>
+              </div>
+              <!-- Search Result -->
+              <div x-show="codeResult && codeResult.found" x-cloak class="bs-coupon-result">
+                <div class="bs-coupon-result-header">
+                  <span class="bs-coupon-result-id" x-text="codeResult?.bet_id"></span>
+                  <span class="bs-coupon-result-status" x-text="codeResult?.status_display"></span>
+                </div>
+                <div class="bs-coupon-result-event" x-text="codeResult?.event"></div>
+                <div class="bs-coupon-result-finances">
+                  <span>Stake: <strong x-text="codeResult?.stake"></strong></span>
+                  <span>Pago: <strong x-text="codeResult?.payout"></strong></span>
+                </div>
+              </div>
+              <div x-show="codeError" x-cloak class="bs-coupon-error" x-text="codeError"></div>
+            </div>
+
+            <!-- Coupon Empty Card -->
+            <div class="bs-coupon-card">
+              <div class="bs-coupon-header">
+                <span class="bs-coupon-title">Cupón</span>
+                <div class="bs-coupon-tabs">
+                  <button class="bs-coupon-tab" :class="couponTab === 'abiertas' && 'active'" @click="couponTab = 'abiertas'">Abiertas</button>
+                  <button class="bs-coupon-tab" :class="couponTab === 'historial' && 'active'" @click="tab = 'historial'; $store.betslip.loadHistory()">Historial</button>
+                </div>
+              </div>
+
+              <div class="bs-coupon-empty">
+                <i class="bi bi-ticket-detailed"></i>
+                <p>Sin selecciones en el boleto de apuesta</p>
+              </div>
+
+              <!-- Code Reservation Input -->
+              <div class="bs-coupon-reservation">
+                <div class="bs-coupon-reservation-label">¿Tienes un código de reserva?</div>
+                <div class="bs-coupon-reservation-row">
+                  <input type="text" class="bs-coupon-reservation-input" placeholder="Ingresar código de reserva">
+                  <button class="bs-coupon-reservation-btn">Canjear</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ AMOUNT SECTION ═══ -->
+          <div x-show="$store.betslip.hasSelection" class="bs-amount-section">
+
+            <!-- Amount Header -->
+            <div class="bs-amount-header">
+              <span class="bs-amount-label">Monto</span>
+              <span class="bs-balance-display">
+                <i class="bi bi-wallet2"></i>
+                <span x-text="$store.betslip.balance"></span>
+              </span>
+            </div>
+
+            <!-- Input -->
+            <div class="bs-input-wrap">
+              <input type="number" class="bs-stake-input"
+                     x-model.number="$store.betslip.stake"
+                     @input="$store.betslip.calculatePayout()"
+                     min="1" max="10000" step="1"
+                     :disabled="$store.betslip.isSuspended || $store.betslip.isFinished"
+                     placeholder="Ingresa monto">
+            </div>
+
+            <!-- Quick Buttons -->
+            <div class="bs-quick-btns">
+              <button class="bs-quick-btn" @click="$store.betslip.setStake(10)" :disabled="$store.betslip.isSuspended || $store.betslip.isFinished">+10</button>
+              <button class="bs-quick-btn" @click="$store.betslip.setStake(50)" :disabled="$store.betslip.isSuspended || $store.betslip.isFinished">+50</button>
+              <button class="bs-quick-btn" @click="$store.betslip.setStake(100)" :disabled="$store.betslip.isSuspended || $store.betslip.isFinished">+100</button>
+              <button class="bs-quick-btn bs-quick-btn-max" @click="$store.betslip.setStake('max')" :disabled="$store.betslip.isSuspended || $store.betslip.isFinished">MAX</button>
+            </div>
+
+            <!-- Validation Messages -->
+            <div class="bs-validations" x-show="$store.betslip.stake > 0">
+              <div class="bs-val-item" :class="$store.betslip.hasMinStake ? 'bs-val-ok' : 'bs-val-error'">
+                <i :class="$store.betslip.hasMinStake ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-circle-fill'"></i>
+                Monto mínimo: <strong>1</strong> ficha
+              </div>
+              <div class="bs-val-item" :class="$store.betslip.hasMaxStake ? 'bs-val-ok' : 'bs-val-error'">
+                <i :class="$store.betslip.hasMaxStake ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-circle-fill'"></i>
+                Monto máximo: <strong>10,000</strong> fichas
+              </div>
+              <div class="bs-val-item" :class="$store.betslip.hasSufficientBalance ? 'bs-val-ok' : 'bs-val-error'">
+                <i :class="$store.betslip.hasSufficientBalance ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-circle-fill'"></i>
+                Saldo suficiente
+              </div>
+            </div>
+
+            <!-- Insufficient balance explicit -->
+            <div x-show="$store.betslip.stake > 0 && !$store.betslip.hasSufficientBalance" x-cloak
+                 class="bs-insufficient">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              Saldo insuficiente. Recarga fichas para continuar.
+            </div>
+          </div>
+
+          <!-- ═══ CALCULATIONS ═══ -->
+          <div x-show="$store.betslip.hasSelection && $store.betslip.stake > 0" class="bs-calc-section">
+
+            <!-- Profit -->
+            <div class="bs-calc-row">
+              <span class="bs-calc-label">
+                <i class="bi bi-graph-up-arrow"></i> Ganancia potencial
+              </span>
+              <span class="bs-calc-value bs-calc-profit" x-text="$store.betslip.profit"></span>
+            </div>
+
+            <!-- Total Return -->
+            <div class="bs-calc-row">
+              <span class="bs-calc-label">
+                <i class="bi bi-cash-stack"></i> Retorno total
+              </span>
+              <span class="bs-calc-value bs-calc-return" x-text="$store.betslip.totalReturn"></span>
+            </div>
+
+            <!-- Divider -->
+            <div class="bs-calc-divider"></div>
+
+            <!-- New Balance -->
+            <div class="bs-calc-row">
+              <span class="bs-calc-label">
+                <i class="bi bi-piggy-bank"></i> Nuevo saldo estimado
+              </span>
+              <span class="bs-calc-value bs-calc-balance" x-text="$store.betslip.newBalance"></span>
+            </div>
+          </div>
+
+          <!-- ═══ CONFIRM BUTTON ═══ -->
+          <div x-show="$store.betslip.hasSelection" class="bs-btn-wrap">
+            <button type="button" class="bs-btn-confirm"
+                    :class="{
+                      'bs-btn-primary': !$store.betslip.isSuspended && !$store.betslip.isFinished && !$store.betslip.isProcessing,
+                      'bs-btn-danger': $store.betslip.isSuspended && !$store.betslip.isFinished && !$store.betslip.isProcessing,
+                      'bs-btn-disabled': !$store.betslip.canPlaceBet && !$store.betslip.isSuspended && !$store.betslip.isFinished
+                    }"
+                    @click="$store.betslip.placeBet()"
+                    :disabled="!$store.betslip.canPlaceBet">
+
+              <!-- Default -->
+              <span x-show="!$store.betslip.requiresReconfirmation && !$store.betslip.isSuspended && !$store.betslip.isFinished && !$store.betslip.isProcessing">
+                Confirmar Apuesta
+              </span>
+
+              <!-- Re-cotización -->
+              <span x-show="$store.betslip.requiresReconfirmation && !$store.betslip.isSuspended && !$store.betslip.isFinished && !$store.betslip.isProcessing">
+                <i class="bi bi-arrow-repeat"></i> Aceptar nueva cuota
+              </span>
+
+              <!-- Suspended -->
+              <span x-show="$store.betslip.isSuspended && !$store.betslip.isFinished && !$store.betslip.isProcessing">
+                <i class="bi bi-lock"></i> Apuestas Cerradas
+              </span>
+
+              <!-- Finished -->
+              <span x-show="$store.betslip.isFinished && !$store.betslip.isProcessing">
+                <i class="bi bi-lock"></i> Evento Finalizado
+              </span>
+
+              <!-- Processing -->
+              <span x-show="$store.betslip.isProcessing">
+                <span class="spinner-border spinner-border-sm" role="status" style="width:14px;height:14px;border-width:2px;"></span>
+                Procesando...
+              </span>
+            </button>
+
+            <!-- Placeholder text under button -->
+            <div x-show="!$store.betslip.isProcessing && !$store.betslip.isSuspended && !$store.betslip.isFinished" class="bs-btn-footer-text">
+              <span x-show="$store.betslip.canPlaceBet">
+                <i class="bi bi-shield-check"></i> Cuenta verificada
+              </span>
+              <span x-show="!$store.betslip.canPlaceBet && $store.betslip.stake > 0 && !$store.betslip.isStakeValid">
+                <i class="bi bi-exclamation-circle"></i> Revisa el monto ingresado
+              </span>
+            </div>
+          </div>
+        </div>
+
+      <!-- Combinada Tab -->
+      <div x-show="tab === 'combinada'" x-cloak>
+        <div x-show="!$store.betslip.hasCombinedSelections" class="bs-empty">
+          <i class="bi bi-layers"></i>
+          <p>Agrega selecciones</p>
+          <span>Toca en "Agregar" en las cuotas para armar tu combinada</span>
+        </div>
+
+        <div x-show="$store.betslip.hasCombinedSelections" class="bs-ticket">
+
+          <!-- Header -->
+          <div class="bs-combined-header">
+            <div>
+              <span class="bs-combined-title">Combinada</span>
+              <span class="bs-combined-count" x-text="$store.betslip.combinedCount + ' selecciones'"></span>
+            </div>
+            <button class="bs-remove-btn" @click="$store.betslip.clearCombined()" title="Limpiar todo">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
+
+          <!-- Selections List Grouped by Event -->
+          <template x-for="group in $store.betslip.groupedSelections" :key="group.eventId">
+            <div class="bs-combined-event-group mb-2 p-2 rounded" style="background: rgba(255,255,255,0.03); border: 1px solid var(--fb-border);">
+              <div class="bs-combined-sel-top mb-1" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+                <span class="bs-combined-sel-event text-white" style="font-weight: 500; font-size: 13px;" x-text="group.eventName"></span>
+              </div>
+              <template x-for="sel in group.selections" :key="sel.id">
+                <div class="bs-combined-sel mt-2" style="background: none; border: none; padding: 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="bs-combined-sel-market" style="font-size: 11px; color: var(--fb-text-muted);" x-text="sel.marketName"></div>
+                    <button class="bs-combined-sel-remove" style="padding: 2px 4px; background: transparent; border: none; color: var(--fb-text-muted); cursor: pointer;" @click="$store.betslip.removeSelectionById(sel.id)">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </div>
+                  <div class="bs-combined-sel-bottom mt-1">
+                    <span class="bs-combined-sel-name text-white" style="font-size: 13px;" x-text="sel.name"></span>
+                    <span class="bs-combined-sel-odds font-bold" style="color: var(--fb-gold); font-size: 13px;" x-text="sel.odds"></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Combined Odds Display -->
+          <div class="bs-combined-odds-row">
+            <span>Cuota combinada</span>
+            <span class="bs-combined-odds-val" x-text="$store.betslip.combinedOdds"></span>
+          </div>
+
+          <!-- Re-cotización alert -->
+          <div x-show="$store.betslip.combinedRequiresReconfirmation" x-cloak class="bs-alert bs-alert-reodds">
+            <i class="bi bi-arrow-repeat"></i>
+            <div class="bs-reodds-text">
+              La cuota cambió de <span class="bs-old-odds" x-text="$store.betslip.combinedPreviousOdds"></span>
+              a <span class="bs-new-odds" x-text="$store.betslip.combinedOdds"></span>
+            </div>
+          </div>
+
+          <!-- Error -->
+          <div x-show="$store.betslip.combinedError" x-cloak class="bs-alert bs-alert-error" x-text="$store.betslip.combinedError"></div>
+
+          <!-- Amount Section -->
+          <div class="bs-amount-section">
+            <div class="bs-amount-header">
+              <span class="bs-amount-label">Monto</span>
+              <span class="bs-balance-display">
+                <i class="bi bi-wallet2"></i>
+                <span x-text="$store.betslip.balance"></span>
+              </span>
+            </div>
+            <div class="bs-input-wrap">
+              <span class="bs-input-currency">$</span>
+              <input type="number" class="bs-stake-input" x-model.number="$store.betslip.combinedStake"
+                     :min="$store.betslip.minStake" :max="$store.betslip.maxStake"
+                     @input="$store.betslip.setCombinedStake(0)">
+            </div>
+            <div class="bs-quick-btns">
+              <button class="bs-quick-btn" @click="$store.betslip.setCombinedStake(10)">+10</button>
+              <button class="bs-quick-btn" @click="$store.betslip.setCombinedStake(50)">+50</button>
+              <button class="bs-quick-btn" @click="$store.betslip.setCombinedStake(100)">+100</button>
+              <button class="bs-quick-btn" @click="$store.betslip.setCombinedStake('max')">MAX</button>
+            </div>
+            <!-- Validation -->
+            <div x-show="$store.betslip.combinedStake > 0 && !$store.betslip.combinedStakeValid" class="bs-val-error">
+              <span x-show="$store.betslip.combinedStake < $store.betslip.minStake">Monto mínimo: $<span x-text="$store.betslip.minStake"></span></span>
+              <span x-show="$store.betslip.combinedStake > $store.betslip.balance">Saldo insuficiente</span>
+            </div>
+          </div>
+
+          <!-- Calculations -->
+          <div class="bs-calc-section">
+            <div class="bs-calc-row">
+              <span>Ganancia neta</span>
+              <span class="bs-calc-profit" x-text="$store.betslip.combinedProfit"></span>
+            </div>
+            <div class="bs-calc-divider"></div>
+            <div class="bs-calc-row">
+              <span>Retorno total</span>
+              <span class="bs-calc-return" x-text="$store.betslip.combinedPotentialPayout"></span>
+            </div>
+            <div class="bs-calc-divider"></div>
+            <div class="bs-calc-row">
+              <span>Nuevo saldo</span>
+              <span class="bs-calc-balance" x-text="$store.betslip.combinedNewBalance"></span>
+            </div>
+          </div>
+
+          <!-- Confirm Button -->
+          <button class="bs-btn-confirm" :class="$store.betslip.canPlaceCombined ? 'bs-btn-primary' : 'bs-btn-disabled'"
+                  :disabled="!$store.betslip.canPlaceCombined"
+                  @click="$store.betslip.placeCombinedBet()">
+            <span x-show="!$store.betslip.combinedProcessing">Colocar Combinada</span>
+            <span x-show="$store.betslip.combinedProcessing">
+              <span class="spinner-border spinner-border-sm" role="status"></span> Colocando...
+            </span>
+          </button>
+          <div class="bs-btn-footer-text">
+            <i class="bi bi-shield-check"></i> Cuenta verificada
+          </div>
+        </div>
+      </div>
+
+      <!-- Historial Tab -->
+      <template x-if="tab === 'historial'">
+        <div class="fb-betslip-history">
+          <!-- Filters Removed: Only open bets are shown here -->
+          
+          <template x-if="$store.betslip.historyLoading">
+            <div class="fb-betslip-history-empty">
+              <div class="fb-spinner" style="width:20px;height:20px;border-width:2px;"></div>
+              <p style="margin-top:8px;">Cargando...</p>
+            </div>
+          </template>
+
+          <template x-if="!$store.betslip.historyLoading && $store.betslip.historyError">
+            <div class="fb-betslip-history-empty">
+              <i class="bi bi-exclamation-triangle" style="font-size:24px;color:var(--fb-danger);opacity:0.8;"></i>
+              <p>No se pudo cargar el historial. Intenta nuevamente.</p>
+              <button class="bs-btn-primary" style="margin-top:8px;padding:4px 12px;font-size:12px;width:auto;" @click="$store.betslip.loadHistory()">Reintentar</button>
+            </div>
+          </template>
+
+          <template x-if="!$store.betslip.historyLoading && !$store.betslip.historyError && $store.betslip.historyBets.length === 0">
+            <div class="fb-betslip-history-empty">
+              <i class="bi bi-receipt-cutoff" style="font-size:24px;opacity:0.3;"></i>
+              <p>No tienes apuestas abiertas.</p>
+              <span style="font-size:10px;color:var(--fb-text-muted);">Tus apuestas aparecerán aquí</span>
+            </div>
+          </template>
+          
+          <template x-if="!$store.betslip.historyLoading && !$store.betslip.historyError && $store.betslip.historyBets.length > 0">
+            <div class="fb-betslip-history-list">
+              <template x-for="bet in $store.betslip.historyBets" :key="bet.uuid">
+                <div class="fb-history-item" :class="'fb-history-' + bet.status">
+                  <div class="fb-history-header">
+                    <span class="fb-history-id" x-text="bet.bet_id"></span>
+                    <span class="fb-status-badge" :class="'fb-status-' + bet.status" x-text="bet.status_display"></span>
+                  </div>
+                  <template x-if="bet.type === 'simple'">
+                    <div class="fb-history-body">
+                      <div class="fb-history-event" x-text="bet.event"></div>
+                      <div class="fb-history-meta">
+                        <span x-text="bet.selection"></span>
+                        <span class="fb-history-odds" x-text="'@ ' + bet.odds"></span>
+                      </div>
+                    </div>
+                  </template>
+                  <template x-if="bet.type === 'combinada'">
+                    <div class="fb-history-body">
+                      <div class="fb-history-event" x-text="'Combinada - ' + bet.count + ' selecciones'"></div>
+                      <div class="fb-history-meta">
+                        <span></span>
+                        <span class="fb-history-odds" x-text="'@ ' + bet.odds"></span>
+                      </div>
+                    </div>
+                  </template>
+                  <div class="fb-history-footer">
+                    <div class="fb-history-stake">
+                      <span class="fb-history-label">Stake:</span>
+                      <span x-text="bet.stake"></span>
+                    </div>
+                    <div class="fb-history-payout">
+                      <span class="fb-history-label">Pago potencial:</span>
+                      <span x-text="bet.payout"></span>
+                    </div>
+                  </div>
+                  <div class="fb-history-extra" style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05);">
+                    <span class="fb-history-date" style="font-size:10px;color:var(--fb-text-muted);" x-text="bet.placed_at"></span>
+                    <template x-if="bet.cashout_available">
+                      <button class="fb-cashout-btn" @click="$store.betslip.openCashoutModal(bet)">
+                        Cash-out <span x-text="bet.cashout_amount"></span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </template>
+              <a href="{% url 'betting:bet_history' %}" class="fb-history-view-all">Ver todas las apuestas <i class="bi bi-arrow-right"></i></a>
+            </div>
+          </template>
+        </div>
+      </template>
+    </div>
+    </aside>
+
+  </div>
+
+  <!-- MOBILE BOTTOM BAR -->
+  <nav class="fb-mobile-bar">
+    <a href="{% url 'betting:event_list' %}" class="fb-mobile-bar-item active">
+      <i class="bi bi-grid-1x2-fill"></i>
+      <span>Inicio</span>
+    </a>
+    <a href="#" class="fb-mobile-bar-item">
+      <i class="bi bi-play-circle-fill" style="color:var(--fb-danger);"></i>
+      <span>En Vivo</span>
+    </a>
+    <button class="fb-mobile-bar-item" @click="$store.betslip.isOpen ? $store.betslip.close() : $store.betslip.isOpen = true" style="position:relative;">
+      <i class="bi bi-receipt"></i>
+      <span>Apuesta</span>
+      <span x-show="$store.betslip.selectionName || $store.betslip.hasCombinedSelections" x-cloak style="position:absolute;top:2px;right:4px;width:8px;height:8px;background:var(--fb-primary);border-radius:50%;"></span>
+    </button>
+    <a href="{% url 'betting:bet_history' %}" class="fb-mobile-bar-item">
+      <i class="bi bi-ticket-perforated-fill"></i>
+      <span>Mis Apuestas</span>
+    </a>
+    <a href="#" class="fb-mobile-bar-item">
+      <i class="bi bi-person-circle"></i>
+      <span>Perfil</span>
+    </a>
+  </nav>
+
+  <!-- LEGAL FOOTER -->
+  <footer class="fb-footer">
+    Plataforma educativa con moneda virtual. No constituye una casa de apuestas.
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    document.addEventListener('alpine:init', () => {
+      Alpine.store('betslip', {
+        isOpen: true,
+        /* Simple Bet */
+        selectionId: null,
+        eventId: null,
+        eventName: '',
+        marketName: '',
+        selectionName: '',
+        selectionType: '',
+        eventStatus: '',
+        odds: '0.00',
+        previousOdds: null,
+        stake: 10,
+        minStake: 1,
+        maxStake: 10000,
+        potentialPayout: '0.00',
+        requiresReconfirmation: false,
+        isSuspended: false,
+        isFinished: false,
+        balance: parseFloat('{{ balance|default:"0" }}'.replace(',', '.')) || 0,
+        isProcessing: false,
+        errorMessage: '',
+        showToast: false,
+        toastMessage: '',
+        toastType: 'success',
+        toastTimer: null,
+        lastBetId: '',
+        /* Confirmation Modal */
+        showConfirmModal: false,
+        betResult: { bet_id: '', type: '', stake: '', odds: '', payout: '' },
+        /* Cashout Modal */
+        showCashoutModal: false,
+        cashoutTarget: null,
+        /* History */
+        historyBets: [],
+        historyLoading: false,
+        historyError: false,
+        ws: null,
+        /* Combined / Accumulator */
+        combinedSelections: [],
+        combinedStake: 10,
+        combinedError: '',
+        combinedRequiresReconfirmation: false,
+        combinedPreviousOdds: null,
+        combinedProcessing: false,
+        serverCombinedOdds: null,
+
+        /* ─── Simple Bet Computed ─── */
+        get hasSelection() {
+          return this.selectionId !== null;
+        },
+
+        get oddsNum() {
+          return parseFloat(this.odds);
+        },
+
+        get totalReturn() {
+          if (this.stake > 0 && this.oddsNum > 0) {
+            return (this.stake * this.oddsNum).toFixed(2);
+          }
+          return '0.00';
+        },
+
+        get profit() {
+          if (this.stake > 0 && this.oddsNum > 0) {
+            return (this.stake * this.oddsNum - this.stake).toFixed(2);
+          }
+          return '0.00';
+        },
+
+        get netProfit() {
+          return this.profit;
+        },
+
+        get newBalance() {
+          if (this.stake > 0) {
+            return Math.max(0, this.balance - this.stake).toFixed(2);
+          }
+          return this.balance.toFixed(2);
+        },
+
+        /* ─── Simple Bet Validation ─── */
+        get hasMinStake() {
+          return this.stake >= this.minStake;
+        },
+
+        get hasMaxStake() {
+          return this.stake <= this.maxStake;
+        },
+
+        get hasSufficientBalance() {
+          return this.stake <= this.balance;
+        },
+
+        get isStakeValid() {
+          return this.stake > 0 && this.hasMinStake && this.hasMaxStake && this.hasSufficientBalance;
+        },
+
+        get isLive() {
+          return this.eventStatus === 'en_vivo';
+        },
+
+        get canPlaceBet() {
+          return this.hasSelection
+            && this.isStakeValid
+            && !this.isSuspended
+            && !this.isFinished
+            && !this.isProcessing;
+        },
+
+        /* ─── Combined / Accumulator Computed ─── */
+        get hasCombinedSelections() {
+          return this.combinedSelections.length > 0;
+        },
+
+        get combinedCount() {
+          return this.combinedSelections.length;
+        },
+
+        get combinedOdds() {
+          if (this.serverCombinedOdds !== null) return this.serverCombinedOdds;
+          if (this.combinedSelections.length === 0) return '0.00';
+          let product = 1;
+          for (const s of this.combinedSelections) {
+            product *= parseFloat(s.odds);
+          }
+          return product.toFixed(2);
+        },
+
+        get combinedPotentialPayout() {
+          if (this.combinedStake > 0 && parseFloat(this.combinedOdds) > 0) {
+            return (this.combinedStake * parseFloat(this.combinedOdds)).toFixed(2);
+          }
+          return '0.00';
+        },
+
+        get combinedProfit() {
+          const payout = parseFloat(this.combinedPotentialPayout);
+          if (payout > 0) return (payout - this.combinedStake).toFixed(2);
+          return '0.00';
+        },
+
+        get combinedNewBalance() {
+          if (this.combinedStake > 0) {
+            return Math.max(0, this.balance - this.combinedStake).toFixed(2);
+          }
+          return this.balance.toFixed(2);
+        },
+
+        get combinedStakeValid() {
+          return this.combinedStake > 0
+            && this.combinedStake >= this.minStake
+            && this.combinedStake <= this.maxStake
+            && this.combinedStake <= this.balance;
+        },
+
+        get canPlaceCombined() {
+          return this.combinedSelections.length >= 2
+            && this.combinedStakeValid
+            && !this.combinedProcessing;
+        },
+
+        get groupedSelections() {
+          const groups = {};
+          this.combinedSelections.forEach(s => {
+            if (!groups[s.eventId]) {
+              groups[s.eventId] = {
+                eventId: s.eventId,
+                eventName: s.eventName,
+                selections: []
+              };
+            }
+            groups[s.eventId].selections.push(s);
+          });
+          return Object.values(groups);
+        },
+
+        /* ─── Simple Bet Methods ─── */
+        selectSelection(selId, odds, selName, evtId, evtName, mktName, selType, evtStatus, mktSuspended, userBalance) {
+          this.selectionId = selId;
+          this.odds = parseFloat(odds).toFixed(2);
+          this.previousOdds = null;
+          this.selectionName = selName;
+          this.selectionType = selType;
+          this.eventStatus = evtStatus;
+          this.eventId = evtId;
+          this.eventName = evtName;
+          this.marketName = mktName;
+          this.stake = 10;
+          this.requiresReconfirmation = false;
+          this.isSuspended = mktSuspended;
+          this.isFinished = false;
+          this.isProcessing = false;
+          this.errorMessage = '';
+          this.showToast = false;
+          this.hideToast();
+          this.balance = userBalance;
+          this.calculatePayout();
+          this.isOpen = true;
+          this.connectWebSocket();
+        },
+
+        clearSelection() {
+          this.selectionId = null;
+          this.odds = '0.00';
+          this.previousOdds = null;
+          this.selectionName = '';
+          this.selectionType = '';
+          this.eventStatus = '';
+          this.eventName = '';
+          this.marketName = '';
+          this.stake = 10;
+          this.requiresReconfirmation = false;
+          this.errorMessage = '';
+          this.isOpen = false;
+          this.disconnectWebSocket();
+        },
+
+        /* ─── Combined / Accumulator Methods ─── */
+        addToCombined(selId, odds, selName, evtId, evtName, mktName, selType, evtStatus, mktSuspended) {
+          // Check si ya existe
+          if (this.combinedSelections.some(s => s.id === selId)) return;
+          // Check contingencias relacionadas (selecciones del MISMO mercado en el mismo evento)
+          const sameMarket = this.combinedSelections.filter(
+            s => s.eventId === evtId && s.marketName === mktName
+          );
+          if (sameMarket.length > 0) {
+            this.showToastMessage('No puedes combinar múltiples selecciones del mismo mercado', 'error');
+            return;
+          }
+          this.combinedSelections.push({
+            id: selId,
+            odds: parseFloat(odds).toFixed(2),
+            name: selName,
+            type: selType || '',
+            eventId: evtId,
+            eventName: evtName,
+            marketName: mktName,
+            eventStatus: evtStatus,
+            suspended: mktSuspended,
+          });
+          this.serverCombinedOdds = null;
+          this.isOpen = true;
+        },
+        
+        isMarketBlocked(evtId, mktName, selId) {
+          // Verifica si ya hay una selección de este MISMO mercado y evento, y NO es esta misma selección
+          return this.combinedSelections.some(
+            s => s.eventId === evtId && s.marketName === mktName && s.id !== selId
+          );
+        },
+
+        removeSelectionById(id) {
+          const index = this.combinedSelections.findIndex(s => s.id === id);
+          if (index !== -1) {
+            this.removeFromCombined(index);
+          }
+        },
+
+        removeFromCombined(index) {
+          this.combinedSelections.splice(index, 1);
+          this.serverCombinedOdds = null;
+        },
+
+        clearCombined() {
+          this.combinedSelections = [];
+          this.combinedStake = 10;
+          this.combinedError = '';
+          this.combinedRequiresReconfirmation = false;
+          this.combinedPreviousOdds = null;
+          this.serverCombinedOdds = null;
+        },
+
+        setCombinedStake(value) {
+          if (value === 'max') {
+            this.combinedStake = this.balance;
+          } else {
+            this.combinedStake = Math.min(Math.max(this.minStake, this.combinedStake + value), this.maxStake);
+          }
+        },
+
+        placeCombinedBet() {
+          if (!this.canPlaceCombined) return;
+          this.combinedProcessing = true;
+          this.combinedError = '';
+
+          const params = new URLSearchParams();
+          this.combinedSelections.forEach(s => params.append('selection_ids', s.id));
+          params.append('stake', this.combinedStake);
+          params.append('odds_confirmed', this.combinedOdds);
+
+          fetch('/bet/combined/place/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRFToken': this.getCsrfToken(),
+            },
+            body: params.toString(),
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              this.balance = data.new_balance || this.balance;
+              this.lastBetId = data.bet_id || '';
+              this.combinedRequiresReconfirmation = false;
+              this.combinedPreviousOdds = null;
+              this.betResult = {
+                bet_id: data.bet_id || '',
+                type: 'Combinada',
+                stake: this.combinedStake.toString(),
+                odds: this.combinedOdds,
+                payout: (this.combinedStake * parseFloat(this.combinedOdds)).toFixed(2),
+              };
+              this.showConfirmModal = true;
+              window.dispatchEvent(new CustomEvent('switch-to-historial'));
+              this.loadHistory();
+              this.showToastMessage('Combinada confirmada \u2713', 'success');
+            } else if (data.recotizacion) {
+              this.combinedPreviousOdds = this.combinedOdds;
+              this.serverCombinedOdds = data.new_odds;
+              this.combinedRequiresReconfirmation = true;
+              this.combinedError = data.error || 'La cuota combinada cambió. Confirma la nueva cuota.';
+            } else {
+              this.combinedError = data.error || 'Error al colocar la combinada.';
+            }
+          })
+          .catch(() => {
+            this.combinedError = 'Error de conexi\u00f3n. Intenta nuevamente.';
+          })
+          .finally(() => {
+            this.combinedProcessing = false;
+          });
+        },
+
+        setStake(value) {
+          if (value === 'max') {
+            this.stake = this.balance;
+          } else {
+            this.stake = Math.min(Math.max(this.minStake, this.stake + value), this.maxStake);
+          }
+          this.calculatePayout();
+        },
+
+        /* ─── Confirmation Modal Methods ─── */
+        confirmKeepSelections() {
+          this.showConfirmModal = false;
+          this.showToastMessage('Selecciones mantenidas en el boleto.', 'success');
+        },
+        confirmClearSelections() {
+          this.showConfirmModal = false;
+          this.clearSelection();
+          this.clearCombined();
+          this.showToastMessage('Selecciones borradas del boleto.', 'success');
+        },
+        confirmViewHistory() {
+          this.showConfirmModal = false;
+          window.dispatchEvent(new CustomEvent('switch-to-historial'));
+          this.loadHistory();
+        },
+
+        /* ─── Cashout Methods ─── */
+        openCashoutModal(bet) {
+          this.cashoutTarget = bet;
+          this.showCashoutModal = true;
+        },
+        executeCashout() {
+          if (!this.cashoutTarget) return;
+          const bet = this.cashoutTarget;
+          this.showCashoutModal = false;
+
+          const url = bet.type === 'simple'
+            ? '/bet/cashout/' + bet.uuid + '/'
+            : '/bet/cashout-combined/' + bet.uuid + '/';
+
+          fetch(url, {
+            method: 'POST',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRFToken': this.getCsrfToken(),
+            },
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success || data.message) {
+              this.showToastMessage('Cash-out exitoso: ' + (data.cashout_amount || bet.cashout_amount) + ' fichas', 'success');
+              this.loadHistory();
+              this.balance = data.new_balance || this.balance;
+            } else {
+              this.showToastMessage(data.error || 'Error en cash-out', 'error');
+            }
+          })
+          .catch(() => {
+            this.showToastMessage('Error de conexi\u00f3n.', 'error');
+          });
+        },
+
+        /* ─── History Methods ─── */
+        loadHistory() {
+          this.historyLoading = true;
+          this.historyError = false;
+          fetch('/api/bets/open/', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          })
+          .then(r => r.json())
+          .then(data => {
+            this.historyBets = data.bets || [];
+          })
+          .catch(() => {
+            this.historyError = true;
+            this.historyBets = [];
+          })
+          .finally(() => {
+            this.historyLoading = false;
+          });
+        },
+
+        close() {
+          this.isOpen = false;
+          this.disconnectWebSocket();
+          this.hideToast();
+          this.clearCombined();
+        },
+
+        hideToast() {
+          if (this.toastTimer) clearTimeout(this.toastTimer);
+          this.showToast = false;
+        },
+
+        showToastMessage(msg, type) {
+          this.hideToast();
+          this.toastMessage = msg;
+          this.toastType = type || 'success';
+          this.showToast = true;
+          this.toastTimer = setTimeout(() => { this.showToast = false; }, 3000);
+        },
+
+        calculatePayout() {
+          if (this.stake > 0 && this.oddsNum > 0) {
+            this.potentialPayout = (this.stake * this.oddsNum).toFixed(2);
+          } else {
+            this.potentialPayout = '0.00';
+          }
+        },
+
+        connectWebSocket() {
+          this.disconnectWebSocket();
+          if (!this.eventId) return;
+          try {
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            this.ws = new WebSocket(protocol + '//' + location.host + '/ws/odds/' + this.eventId + '/');
+            this.ws.onmessage = (e) => this.handleOddsMessage(JSON.parse(e.data));
+            this.ws.onerror = () => {};
+          } catch(e) {}
+        },
+
+        disconnectWebSocket() {
+          if (this.ws) {
+            this.ws.onclose = null;
+            this.ws.close();
+            this.ws = null;
+          }
+        },
+
+        handleOddsMessage(data) {
+          if (data.type === 'market_suspended') {
+            this.isSuspended = true;
+          } else if (data.type === 'odds_update') {
+            if (data.data?.market_reactivated) {
+              this.isSuspended = false;
+            }
+            if (data.data?.completed === true) {
+              this.isFinished = true;
+              this.isSuspended = true;
+            }
+            if (data.data?.markets) {
+              data.data.markets.forEach(market => {
+                market.selections?.forEach(sel => {
+                  if (sel.selection_id == this.selectionId) {
+                    const newOdds = parseFloat(sel.odds).toFixed(2);
+                    if (newOdds !== this.odds) {
+                      this.previousOdds = this.odds;
+                      this.odds = newOdds;
+                      this.requiresReconfirmation = true;
+                      this.calculatePayout();
+                    }
+                  }
+                });
+              });
+            }
+          }
+        },
+
+        getCsrfToken() {
+          const name = 'csrftoken';
+          const value = '; ' + document.cookie;
+          const parts = value.split('; ' + name + '=');
+          if (parts.length === 2) return parts.pop().split(';').shift();
+          return '';
+        },
+
+        placeBet() {
+          if (!this.canPlaceBet) return;
+          this.isProcessing = true;
+          this.errorMessage = '';
+
+          const params = new URLSearchParams();
+          params.append('selection_id', this.selectionId);
+          params.append('stake', this.stake);
+          params.append('odds_confirmed', this.odds);
+
+          fetch('/bet/place/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRFToken': this.getCsrfToken(),
+            },
+            body: params.toString(),
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              this.balance = data.new_balance;
+              this.lastBetId = data.bet_id || '';
+              this.betResult = {
+                bet_id: data.bet_id || '',
+                type: 'Simple',
+                stake: this.stake.toString(),
+                odds: this.odds,
+                payout: this.potentialPayout,
+              };
+              this.showConfirmModal = true;
+              window.dispatchEvent(new CustomEvent('switch-to-historial'));
+              this.loadHistory();
+              this.showToastMessage('Apuesta confirmada \u2713', 'success');
+            } else if (data.recotizacion) {
+              this.previousOdds = this.odds;
+              this.odds = parseFloat(data.new_odds).toFixed(2);
+              this.requiresReconfirmation = true;
+              this.calculatePayout();
+              this.errorMessage = data.error || 'La cuota cambió. Confirma la nueva cuota.';
+            } else {
+              this.errorMessage = data.error || 'Error al colocar la apuesta.';
+            }
+          })
+          .catch(() => {
+            this.errorMessage = 'Error de conexión. Intenta nuevamente.';
+          })
+          .finally(() => {
+            this.isProcessing = false;
+          });
+        },
+      });
+    });
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
