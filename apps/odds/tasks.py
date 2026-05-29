@@ -280,7 +280,7 @@ def sync_live_scores(self):
         scores = client.fetch_scores()
     except OddsAPIError as e:
         logger.warning('scores_api_error', extra={'detail': str(e)})
-        return {'status': 'error', 'detail': str(e)}
+        return {'status': 'error', 'reason': str(e)}
 
     if not scores:
         return {'status': 'no_scores'}

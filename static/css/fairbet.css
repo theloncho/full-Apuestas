@@ -1195,7 +1195,10 @@ h3, h4, h5, h6 { font-weight: 500; margin: 0; }
   border-color: var(--fb-primary);
 }
 .bs-receipt-won {
-  border-left-color: var(--fb-success);
+  border-left: 4px solid var(--fb-success);
+}
+.bs-receipt-cashedout {
+  border-left: 4px solid var(--fb-warning);
 }
 .bs-receipt-lost {
   border-left-color: var(--fb-danger);

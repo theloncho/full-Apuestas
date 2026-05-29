@@ -34,17 +34,27 @@
       </div>
     </div>
     <!-- Slide 3: Dynamic w/ match data -->
-    <div class="fb-hero-slide" :style="{ opacity: slide === 2 ? 1 : 0, zIndex: slide === 2 ? 2 : 1 }" style="background: linear-gradient(135deg, #1a2030 0%, #0B0F17 100%);">
+    <div class="fb-hero-slide" :style="{ opacity: slide === 2 ? 1 : 0, zIndex: slide === 2 ? 2 : 1 }" style="background-image: url('{% static 'images/cerro_cristal.jpg' %}'); background-size: cover; background-position: center;">
       <div class="fb-hero-overlay" style="background: linear-gradient(135deg, rgba(15,23,42,0.85) 0%, rgba(15,23,42,0.1) 100%);">
         {% if upcoming.0 %}
+        {% if upcoming.0.status == 'en_vivo' %}
         <span class="fb-hero-tag" style="background-color: #FF4D4D;color:#fff;"><span class="pulse-dot me-1"></span>EN VIVO</span>
+        {% endif %}
         <h2 class="fb-hero-title">{{ upcoming.0.home_team }} vs {{ upcoming.0.away_team }}</h2>
+        
+        {% if upcoming.0.status == 'en_vivo' or upcoming.0.status == 'finalizado' %}
         <div class="fb-hero-live-score">
-          <span class="fb-hero-score">{{ upcoming.0.result_home|default:"0" }}</span>
+          <span id="hero-score-home-{{ upcoming.0.id }}" class="fb-hero-score">{{ upcoming.0.result_home|default:"0" }}</span>
           <span class="fb-hero-score-divider">:</span>
-          <span class="fb-hero-score">{{ upcoming.0.result_away|default:"0" }}</span>
+          <span id="hero-score-away-{{ upcoming.0.id }}" class="fb-hero-score">{{ upcoming.0.result_away|default:"0" }}</span>
         </div>
-        <a href="{% url 'betting:event_detail' upcoming.0.id %}" class="fb-hero-cta">Apostar ahora <i class="bi bi-arrow-right ms-1"></i></a>
+        {% else %}
+        <div class="fb-hero-live-score" style="opacity: 0.8; font-size: 1.5rem; letter-spacing: 2px;">
+          <span class="text-white">{{ upcoming.0.scheduled_at|date:"d M - H:i" }}</span>
+        </div>
+        {% endif %}
+        
+        <a href="{% url 'betting:event_detail' upcoming.0.id %}" class="fb-hero-cta mt-3">Apostar ahora <i class="bi bi-arrow-right ms-1"></i></a>
         {% else %}
         <span class="fb-hero-tag" style="background-color: #2D7CFF;color:#fff;"><i class="bi bi-megaphone-fill me-1"></i>Destacado</span>
         <h2 class="fb-hero-title">TATANBET</h2>
@@ -116,12 +126,16 @@
           <div class="fb-team-row">
             <div class="fb-team-shield c2">{{ event.home_team|make_list|first }}</div>
             <span class="fb-team-name">{{ event.home_team }}</span>
-            <span class="fb-event-score fs-5 fw-bold">{{ event.result_home|default:"0" }}</span>
+            {% if event.status == 'en_vivo' or event.status == 'finalizado' %}
+            <span id="score-home-{{ event.id }}" class="fb-event-score fs-5 fw-bold">{{ event.result_home|default:"0" }}</span>
+            {% endif %}
           </div>
           <div class="fb-team-row">
             <div class="fb-team-shield c1">{{ event.away_team|make_list|first }}</div>
             <span class="fb-team-name">{{ event.away_team }}</span>
-            <span class="fb-event-score fs-5 fw-bold">{{ event.result_away|default:"0" }}</span>
+            {% if event.status == 'en_vivo' or event.status == 'finalizado' %}
+            <span id="score-away-{{ event.id }}" class="fb-event-score fs-5 fw-bold">{{ event.result_away|default:"0" }}</span>
+            {% endif %}
           </div>
 
         </div>
@@ -176,4 +190,68 @@
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const liveEventIds = [
+    {% for event in upcoming %}
+      {% if event.status == 'en_vivo' %}
+        {{ event.id }},
+      {% endif %}
+    {% endfor %}
+  ];
+  
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  
+  liveEventIds.forEach(eventId => {
+    const ws = new WebSocket(protocol + '//' + location.host + '/ws/odds/' + eventId + '/');
+    ws.onmessage = function(e) {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'odds_update') {
+          const payload = data.data;
+          // Add highlight animation class temporarily
+          const highlightUpdate = (el) => {
+            if (!el) return;
+            el.style.transition = 'color 0.3s, transform 0.3s';
+            el.style.color = '#10B981'; // green for goal
+            el.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+              el.style.color = '';
+              el.style.transform = '';
+            }, 1500);
+          };
+
+          if (payload.score_home !== undefined && payload.score_home !== null) {
+            const sh = document.getElementById('score-home-' + eventId);
+            if (sh && sh.textContent !== String(payload.score_home)) {
+              sh.textContent = payload.score_home;
+              highlightUpdate(sh);
+            }
+            const hsh = document.getElementById('hero-score-home-' + eventId);
+            if (hsh && hsh.textContent !== String(payload.score_home)) {
+              hsh.textContent = payload.score_home;
+              highlightUpdate(hsh);
+            }
+          }
+          if (payload.score_away !== undefined && payload.score_away !== null) {
+            const sa = document.getElementById('score-away-' + eventId);
+            if (sa && sa.textContent !== String(payload.score_away)) {
+              sa.textContent = payload.score_away;
+              highlightUpdate(sa);
+            }
+            const hsa = document.getElementById('hero-score-away-' + eventId);
+            if (hsa && hsa.textContent !== String(payload.score_away)) {
+              hsa.textContent = payload.score_away;
+              highlightUpdate(hsa);
+            }
+          }
+        }
+      } catch (err) {}
+    };
+  });
+});
+</script>
 {% endblock %}

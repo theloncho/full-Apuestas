@@ -202,18 +202,21 @@ def bet_history(request):
     """Historial de apuestas del usuario."""
     filter_type = request.GET.get('filter', 'all')
     
-    status_filter = []
-    if filter_type == 'open':
-        status_filter = [BetStatus.ACCEPTED, BetStatus.PENDING]
-    elif filter_type == 'resolved':
-        status_filter = [BetStatus.WON, BetStatus.LOST, BetStatus.VOID, BetStatus.CASHED_OUT]
-
     simple_query = Bet.objects.filter(user=request.user)
     combined_query = CombinedBet.objects.filter(user=request.user)
-
-    if status_filter:
-        simple_query = simple_query.filter(status__in=status_filter)
-        combined_query = combined_query.filter(status__in=status_filter)
+    
+    if filter_type == 'open':
+        simple_query = simple_query.filter(status__in=[BetStatus.ACCEPTED, BetStatus.PENDING])
+        combined_query = combined_query.filter(status__in=[BetStatus.ACCEPTED, BetStatus.PENDING])
+    elif filter_type == 'resolved':
+        simple_query = simple_query.filter(status=BetStatus.SETTLED)
+        combined_query = combined_query.filter(status=BetStatus.SETTLED)
+    elif filter_type == 'won':
+        simple_query = simple_query.filter(status=BetStatus.SETTLED, payout__gt=0, cashout_amount__isnull=True)
+        combined_query = combined_query.filter(status=BetStatus.SETTLED, payout__gt=0, cashout_amount__isnull=True)
+    elif filter_type == 'lost':
+        simple_query = simple_query.filter(status=BetStatus.SETTLED, payout=0, cashout_amount__isnull=True)
+        combined_query = combined_query.filter(status=BetStatus.SETTLED, payout=0, cashout_amount__isnull=True)
 
     simple_bets = list(simple_query.select_related('selection__market__event'))
     for b in simple_bets:
