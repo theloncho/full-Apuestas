@@ -2,8 +2,10 @@
 
 {% block title %}Dashboard Admin — TATANBET{% endblock %}
 
+{% block body_class %}dashboard-page{% endblock %}
+
 {% block content %}
-<div class="container-fluid py-2" x-data="dashboardWS()" x-init="connect()">
+<div class="container-fluid dashboard-full py-2" x-data="dashboardWS()" x-init="connect()">
   
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -16,41 +18,33 @@
   </div>
 
   <!-- KPIs -->
-  <div class="row g-3 mb-4">
+  <div class="dashboard-kpis mb-4">
     <!-- GGR -->
-    <div class="col-sm-6 col-lg-3">
-      <div class="fb-event-card h-100" style="border-top: 3px solid var(--fb-primary);">
-        <div class="text-xs text-muted text-uppercase mb-2">Gross Gaming Revenue (GGR)</div>
-        <div class="text-2xl text-primary font-medium mb-1">{{ ggr|floatformat:2|default:"0.00" }}</div>
-        <div class="text-xs text-success"><i class="bi bi-arrow-up-right me-1"></i> Volumen: {{ total_stakes|floatformat:2|default:"0.00" }} fichas</div>
-      </div>
+    <div class="fb-event-card h-100" style="border-top: 3px solid var(--fb-primary);">
+      <div class="text-xs text-muted text-uppercase mb-2">Gross Gaming Revenue (GGR)</div>
+      <div class="text-2xl text-primary font-medium mb-1">{{ ggr|floatformat:2|default:"0.00" }}</div>
+      <div class="text-xs text-success"><i class="bi bi-arrow-up-right me-1"></i> Volumen: {{ total_stakes|floatformat:2|default:"0.00" }} fichas</div>
     </div>
     <!-- Apuestas Activas -->
-    <div class="col-sm-6 col-lg-3">
-      <div class="fb-event-card h-100" style="border-top: 3px solid var(--fb-info);">
-        <div class="text-xs text-muted text-uppercase mb-2">Volumen de Apuestas</div>
-        <div class="text-2xl text-white font-medium mb-1">{{ total_bets|default:"0" }}</div>
-        <div class="text-xs text-info"><i class="bi bi-clock-history me-1"></i> {{ active_bets|default:"0" }} apuestas activas</div>
-      </div>
+    <div class="fb-event-card h-100" style="border-top: 3px solid var(--fb-info);">
+      <div class="text-xs text-muted text-uppercase mb-2">Volumen de Apuestas</div>
+      <div class="text-2xl text-white font-medium mb-1">{{ total_bets|default:"0" }}</div>
+      <div class="text-xs text-info"><i class="bi bi-clock-history me-1"></i> {{ active_bets|default:"0" }} apuestas activas</div>
     </div>
     <!-- Usuarios Registrados -->
-    <div class="col-sm-6 col-lg-3">
-      <div class="fb-event-card h-100" style="border-top: 3px solid var(--fb-success);">
-        <div class="text-xs text-muted text-uppercase mb-2">Usuarios Activos</div>
-        <div class="text-2xl text-white font-medium mb-1">{{ active_users|default:"0" }}</div>
-        <div class="text-xs text-success"><i class="bi bi-people me-1"></i> Registrados en sistema</div>
-      </div>
+    <div class="fb-event-card h-100" style="border-top: 3px solid var(--fb-success);">
+      <div class="text-xs text-muted text-uppercase mb-2">Usuarios Activos</div>
+      <div class="text-2xl text-white font-medium mb-1">{{ active_users|default:"0" }}</div>
+      <div class="text-xs text-success"><i class="bi bi-people me-1"></i> Registrados en sistema</div>
     </div>
     <!-- Alertas -->
-    <div class="col-sm-6 col-lg-3">
-      <div class="fb-event-card h-100" style="border-top: 3px solid var(--fb-danger); background-color: rgba(248,113,113,0.05);">
-        <div class="text-xs text-muted text-uppercase mb-2">Alertas de Fraude</div>
-        <div class="d-flex align-items-center gap-3">
-          <div class="text-2xl text-danger font-medium mb-1">{{ pending_fraud|default:"0" }}</div>
-          <i class="bi bi-bell text-danger" style="font-size: 24px; opacity: 0.5;"></i>
-        </div>
-        <div class="text-xs text-danger">Pendientes de revisión</div>
+    <div class="fb-event-card h-100" style="border-top: 3px solid var(--fb-danger); background-color: rgba(248,113,113,0.05);">
+      <div class="text-xs text-muted text-uppercase mb-2">Alertas de Fraude</div>
+      <div class="d-flex align-items-center gap-3">
+        <div class="text-2xl text-danger font-medium mb-1">{{ pending_fraud|default:"0" }}</div>
+        <i class="bi bi-bell text-danger" style="font-size: 24px; opacity: 0.5;"></i>
       </div>
+      <div class="text-xs text-danger">Pendientes de revisión</div>
     </div>
   </div>
 
@@ -116,7 +110,7 @@
   <!-- Tablas -->
   <div class="row g-3">
     <!-- Apuestas Recientes -->
-    <div class="col-lg-8">
+    <div class="col-lg-6">
       <div class="fb-event-card p-0 overflow-hidden h-100">
         <div class="p-3 border-bottom" style="border-color: var(--fb-border) !important;">
           <h2 class="text-base text-white font-medium m-0">Últimas Apuestas</h2>
@@ -153,7 +147,7 @@
     </div>
 
     <!-- Acciones Rápidas -->
-    <div class="col-lg-4">
+    <div class="col-lg-6">
       <div class="fb-event-card h-100">
         <h2 class="text-base text-white font-medium mb-3 border-bottom pb-2" style="border-color: var(--fb-border) !important;">Eventos en Vivo (Liquidar)</h2>
         <div class="d-flex flex-column gap-2">

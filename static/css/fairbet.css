@@ -2425,6 +2425,52 @@ body.profile-page .fb-layout {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* DASHBOARD PAGE MODE — Full-width layout without sidebar/betslip */
+/* ═══════════════════════════════════════════════════════════════ */
+
+body.dashboard-page .fb-sidebar,
+body.dashboard-page .fb-betslip {
+  display: none !important;
+}
+
+body.dashboard-page .fb-main {
+  margin-right: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  padding: 24px 32px !important;
+}
+
+body.dashboard-page .fb-layout {
+  max-width: 100% !important;
+}
+
+.dashboard-full {
+  width: 100%;
+  max-width: none;
+}
+
+.dashboard-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 992px) {
+  .dashboard-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboard-kpis {
+    grid-template-columns: 1fr;
+  }
+  body.dashboard-page .fb-main {
+    padding: 16px !important;
+  }
+}
+
 /* ─── Responsive ───────────────────────────────────────────────── */
 @media (min-width: 769px) {
   .fb-betslip {
